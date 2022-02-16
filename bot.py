@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 from aiogram import Bot, Dispatcher, executor, types
 
-import token
+import mytoken
 from sqllighter3 import SQLighter
 
 from stopgameParser import StopGame
@@ -27,8 +27,6 @@ async def sub(message: types.Message):
     else:
         db.update_subscription(message.from_user.id, True)
     await message.answer("Вы подписаны на нашу рассылку!")
-
-
 @dp.message_handler(commands=['unsubscribe'])
 async def unsub(message: types.Message):
     if not db.subscriber_exists(message.from_user.id):
@@ -38,8 +36,6 @@ async def unsub(message: types.Message):
     else:
         db.update_subscription(message.from_user.id, False)
         await message.answer("Вы успешно отписаны.")
-
-
 async def scheduled(wait_for):
     while True:
         await asyncio.sleep(wait_for)
