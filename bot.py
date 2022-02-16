@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 from aiogram import Bot, Dispatcher, executor, types
 
-import config
+import token
 from sqllighter3 import SQLighter
 
 from stopgameParser import StopGame
@@ -11,7 +11,7 @@ from stopgameParser import StopGame
 logging.basicConfig(level=logging.INFO)
 
 # Bot init
-bot = Bot(token=config.TOKEN)
+bot = Bot(token=token.TOKEN)
 dp = Dispatcher(bot)
 db = SQLighter('db.db')
 
