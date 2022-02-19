@@ -154,11 +154,14 @@ class Vacancy:
         result = ''
         result += f"<b>{template_bullet[info_key]}</b>"
         if info_key == 'description':
-            return result + self.info[info_key].title()
+            return result + self.info[info_key].capitalize() + '\n\n'
 
         list_items = self.info[info_key].split('-')
+
         list_items = list(map(str.strip, list_items))
-        result += '\n• '.join(list_items)
+        for item in list_items:
+            if item:
+                result += '\n• ' + item.capitalize()
         result += '\n\n'
         return result
 
