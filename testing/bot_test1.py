@@ -15,7 +15,7 @@ bot = telebot.TeleBot(config.TOKEN)
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    sticker_welcome = open('stickers/sticker.webp', 'rb')
+    sticker_welcome = open('../stickers/sticker.webp', 'rb')
     bot.send_sticker(message.chat.id, sticker_welcome)
 
     # keyboard

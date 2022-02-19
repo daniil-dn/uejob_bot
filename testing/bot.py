@@ -1,19 +1,17 @@
 import logging
 import asyncio
-from datetime import datetime
 from aiogram import Bot, Dispatcher, executor, types
 
-import mytoken
-from sqllighter3 import SQLighter
+from testing.sqllighter3 import SQLighter
 
-from stopgameParser import StopGame
+
 
 logging.basicConfig(level=logging.INFO)
 
 # Bot init
 bot = Bot(token=token.TOKEN)
 dp = Dispatcher(bot)
-db = SQLighter('db.db')
+db = SQLighter('../db.db')
 
 # Parser init
 sg = StopGame('lastkey.txt')

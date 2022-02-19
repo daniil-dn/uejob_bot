@@ -41,18 +41,19 @@ class Vacancy:
         4: ("art / code", ('art', 'code')),
         5: ("Сколько лет опыта👇", ("None", 1, 2, 3, 4, 5)),
         6: ("Платформа👇", (
-            'PC, Console', 'PC, Mobile', 'PC, Mobile, Console', 'PC, Mobile, Console, VR', 'PC, Console, VR', 'Mobile',
+            'PC, Console', 'PC', 'PC, Mobile', 'PC, Mobile, Console', 'PC, Mobile, Console, VR', 'PC, Console, VR',
+            'Mobile',
             'Console', 'VR')),
         7: ("Удаленка?👇", ("None", 'remote')),
         8: ("Офис есть? Или не написан город?👇", ("None", "не написан город", "Москва", "Санкт-Петербург", "Киев")),
         9: ("💰 ?👇", ('По договоренности',)),
         10: ("Какой график работы?", ('Full-time', 'Part-time')),
-        11: ("Описание компании", ('None',)),
-        12: ("Что ты будешь делать", ('None',)),
-        13: ("Твои скиллы", ('None',)),
-        14: ("Круто, если знаешь", ('None',)),
-        15: ("Условия и плюшки", ('None',)),
-        16: (" Полезная информация", ('None',)),
+        11: ("Описание компании  '-' - разделитель", ('None',)),
+        12: ("Что ты будешь делать '-' - разделитель", ('None',)),
+        13: ("Твои скиллы '-' - разделитель", ('None',)),
+        14: ("Круто, если знаешь '-' - разделитель", ('None',)),
+        15: ("Условия и плюшки '-' - разделитель", ('None',)),
+        16: (" Полезная информация '-' - разделитель", ('None',)),
         17: ("Контакты", ('Ingamejob', 'Djinni', "Head Hunter")),
     }
     info = {
@@ -127,31 +128,61 @@ class Vacancy:
             office_remote_tuple.append(office_str)
         return ' || '.join(office_remote_tuple)
 
+    def get_platforms(self):
+        result = []
+        for i in self.info['platform'].split(","):
+            i = i.strip()
+            if len(i) < 4 or i in ('vr/ar'):
+                result.append(i.upper())
+            else:
+                result.append(i.title())
+        return ', '.join(result)
+
     def get_bullet_text(self, info_key):
-        return self.info.get(info_key, '')
+        template_bullet = {
+            'description': '🦄',
+            'resp': '🚀 Что ты будешь делать',
+            'require': '📚 Твои скиллы',
+            'plus': '👍 Круто, если знаешь',
+            'cond': '🍪 Условия и плюшки',
+            'useful': 'ℹ️ Полезная информация',
+            'contacts': '📨 Контакты',
+        }
+        if self.info[info_key].find('none') != -1:
+            return ''
+
+        result = ''
+        result += f"<b>{template_bullet[info_key]}</b>"
+        if info_key == 'description':
+            return result + self.info[info_key].title()
+
+        list_items = self.info[info_key].split('-')
+        list_items = list(map(str.strip, list_items))
+        result += '\n• '.join(list_items)
+        result += '\n\n'
+        return result
+
+    def get_contacts(self):
+        resource_name_exp = r'^((?!-)[A-Za-z0-9-]{1, 63}(?<!-)\\.)+[A-Za-z]{2, 6}$'
+        return self.info['contacts']
 
     def get_ready_vacancy(self):
         result = f"""
 {self.get_tags()}\n
-<b>{self.info['skill_level'].upper()} {self.get_vacancy_title()} {self.get_company_name()}</b>\n
-🕹{self.info['game_title'].title()} ({self.info['platform'].title()})
+<b>{self.info['skill_level'].upper()} {self.get_vacancy_title()} {self.get_company_name()}</b>
+🕹{self.info['game_title'].title()} ({self.get_platforms()})
 🧠{self.info['skill_level'].title()} {self.get_years()}
 💰{self.info['money'].lower()}
 ⏰{self.info['schedule'].title()}
-{self.get_location()}\n
-🦄 {self.info['description']}\n
-<b>🚀 Что ты будешь делать</b>
-{self.get_bullet_text('resp')}\n
-<b>📚 Твои скиллы</b>
-{self.get_bullet_text('require')}\n
-<b>👍 Круто, если знаешь</b>
-{self.get_bullet_text('plus')}\n
-<b>🍪 Условия и плюшки</b>
-{self.get_bullet_text('cond')}\n
-<b>ℹ️ Полезная информация</b>
-{self.get_bullet_text('useful')}\n
-<b>📨 Контакты</b>
-{self.info['contacts']}
-Вакансия на hh
 """
+        result += f"{self.get_location()}\n\n"
+        result += f"{self.get_bullet_text('description')}"
+        result += f"{self.get_bullet_text('resp')}"
+        result += f"{self.get_bullet_text('require')}"
+        result += f"{self.get_bullet_text('plus')}"
+        result += f"{self.get_bullet_text('cond')}"
+        result += f"{self.get_bullet_text('useful')}"
+        result += f"{self.get_contacts()}\nВакансия на"
+        result += f"  "
+
         return result

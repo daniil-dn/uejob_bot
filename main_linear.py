@@ -1,13 +1,9 @@
 import logging
-import asyncio
-from datetime import datetime
-from collections import OrderedDict
 from aiogram import Bot, Dispatcher, executor
 
 import mytoken
 from Vacancy import vacancy_per_user, Vacancy, types
-from sqllighter3 import SQLighter
-from stopgameParser import StopGame
+from testing.sqllighter3 import SQLighter
 
 logging.basicConfig(level=logging.INFO)
 
