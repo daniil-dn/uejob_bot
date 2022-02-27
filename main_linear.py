@@ -14,7 +14,7 @@ db = SQLighter('db.db')
 
 
 # @dp.message_handler(commands=['subscribe'])
-@dp.message_handler(commands=['new'])
+@dp.message_handler(commands=['new', 'start'])
 async def start_over(message: types.Message):
     vacancy_per_user[message.chat.id] = Vacancy()
     text = vacancy_per_user[message.chat.id].get_text()

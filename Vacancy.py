@@ -44,16 +44,16 @@ class Vacancy:
             'PC, Console', 'PC', 'PC, Mobile', 'PC, Mobile, Console', 'PC, Mobile, Console, VR', 'PC, Console, VR',
             'Mobile',
             'Console', 'VR')),
-        7: ("Удаленка?👇", ("None", 'remote')),
+        7: ("Удаленка?👇", ("None", 'Remote')),
         8: ("Офис есть? Или не написан город?👇", ("None", "не написан город", "Москва", "Санкт-Петербург", "Киев")),
         9: ("💰 ?👇", ('По договоренности',)),
-        10: ("Какой график работы?", ('Full-time', 'Part-time')),
-        11: ("Описание компании  '-' - разделитель", ('None',)),
-        12: ("Что ты будешь делать '-' - разделитель", ('None',)),
-        13: ("Твои скиллы '-' - разделитель", ('None',)),
-        14: ("Круто, если знаешь '-' - разделитель", ('None',)),
-        15: ("Условия и плюшки '-' - разделитель", ('None',)),
-        16: (" Полезная информация '-' - разделитель", ('None',)),
+        10: ("Какой график работы?", ('Full-time', 'Part-time', 'Contract')),
+        11: ("Описание компании  '=' - разделитель", ('None',)),
+        12: ("Что ты будешь делать '=' - разделитель", ('None',)),
+        13: ("Твои скиллы '=' - разделитель", ('None',)),
+        14: ("Круто, если знаешь '=' - разделитель", ('None',)),
+        15: ("Условия и плюшки '=' - разделитель", ('None',)),
+        16: (" Полезная информация '=' - разделитель", ('None',)),
         17: ("Контакты", ('Ingamejob', 'Djinni', "Head Hunter")),
     }
     info = {
@@ -77,12 +77,14 @@ class Vacancy:
         if self.info[self.STAGES[7]].lower().find('none') != -1:
             is_remote = False
         else:
-            result = '#remote '
+            result = '#Remote'
         if self.info[self.STAGES[8]].lower().find('none') != -1:
             is_office = False
         else:
             office_place = self.info[self.STAGES[8]].title()
-            result += '#office'
+            if is_remote:
+                result += ' '
+            result += '#Office'
         return result, office_place
 
     def get_tags(self):
@@ -95,7 +97,18 @@ class Vacancy:
         else:
             company = self.info['company_name'].strip().title()
             company = company.replace(' ', '')
-        return f'#unrealengine #gamedev #{self.info[self.STAGES[4]]} #{self.info[self.STAGES[1]]} {platforms} {self.get_office_remote()[0]} #{company}'
+
+        full_part_contract = 'FullTime'
+        match self.info['schedule'].strip().lower():
+            # 'Full-time', 'Part-time', 'Contract'
+            case 'full-time':
+                full_part_contract = 'FullTime'
+            case 'part-time':
+                full_part_contract = 'PartTime'
+            case 'contract':
+                full_part_contract = 'Contract'
+
+        return f'#UnrealEngine #GameDev #{full_part_contract} #{self.info[self.STAGES[4]].capitalize()} #{self.info["skill_level"].capitalize()} {self.get_platforms(is_tags=True)} {self.get_office_remote()[0]} #{company.capitalize()}'
 
     def get_vacancy_title(self):
         return self.info['vacancy_title'].strip().upper()
@@ -123,30 +136,38 @@ class Vacancy:
             office_remote_tuple.append(remote_str)
         if self.info['office'].lower().find('none') == -1:
             office_str = '👔 Офис'
-            if self.info['office'].find("не написан город") == -1:
-                office_str += f" ({self.info['office'].title()})"
+            if self.info['office'].find("Не написан город") == -1:
+                office_str += f"({self.info['office'].title()})"
             office_remote_tuple.append(office_str)
         return ' || '.join(office_remote_tuple)
 
-    def get_platforms(self):
+    def get_platforms(self, is_tags=False):
         result = []
         for i in self.info['platform'].split(","):
             i = i.strip()
-            if len(i) < 4 or i in ('vr/ar'):
-                result.append(i.upper())
+            if len(i) < 4 or i in ('VR/AR'):
+                match is_tags:
+                    case True:
+                        result.append('#' + i.upper())
+                    case False:
+                        result.append(i.upper())
             else:
-                result.append(i.title())
-        return ', '.join(result)
+                match is_tags:
+                    case True:
+                        result.append('#' + i.title())
+                    case False:
+                        result.append(i.title())
+
+        return ' '.join(result) if is_tags else ', '.join(result)
 
     def get_bullet_text(self, info_key):
         template_bullet = {
-            'description': '🦄',
+            'description': '🦄 ',
             'resp': '🚀 Что ты будешь делать',
             'require': '📚 Твои скиллы',
             'plus': '👍 Круто, если знаешь',
             'cond': '🍪 Условия и плюшки',
-            'useful': 'ℹ️ Полезная информация',
-            'contacts': '📨 Контакты',
+            'useful': 'ℹ️ Полезная информация'
         }
         if self.info[info_key].find('none') != -1:
             return ''
@@ -156,28 +177,31 @@ class Vacancy:
         if info_key == 'description':
             return result + self.info[info_key].capitalize() + '\n\n'
 
-        list_items = self.info[info_key].split('-')
+        list_items = self.info[info_key].split('=')
 
         list_items = list(map(str.strip, list_items))
         for item in list_items:
             if item:
-                result += '\n• ' + item.capitalize()
+                result += '\n• ' + item.capitalize().replace(';', '')
         result += '\n\n'
+
         return result
 
     def get_contacts(self):
         resource_name_exp = r'^((?!-)[A-Za-z0-9-]{1, 63}(?<!-)\\.)+[A-Za-z]{2, 6}$'
-        return self.info['contacts']
+        result = '📨 Контакты \n'
+        return result + self.info['contacts']
 
     def get_ready_vacancy(self):
         result = f"""
 {self.get_tags()}\n
 <b>{self.info['skill_level'].upper()} {self.get_vacancy_title()} {self.get_company_name()}</b>
-🕹{self.info['game_title'].title()} ({self.get_platforms()})
-🧠{self.info['skill_level'].title()} {self.get_years()}
-💰{self.info['money'].lower()}
-⏰{self.info['schedule'].title()}
-"""
+
+🕹 {self.info['game_title'].title()} ({self.get_platforms()})
+🧠 {self.info['skill_level'].title()} {self.get_years()}
+💰 {self.info['money'].capitalize()}
+⏰ {self.info['schedule'].title()}
+    """
         result += f"{self.get_location()}\n\n"
         result += f"{self.get_bullet_text('description')}"
         result += f"{self.get_bullet_text('resp')}"
@@ -186,6 +210,6 @@ class Vacancy:
         result += f"{self.get_bullet_text('cond')}"
         result += f"{self.get_bullet_text('useful')}"
         result += f"{self.get_contacts()}\nВакансия на"
-        result += f"  "
 
+        result += f"  "
         return result
