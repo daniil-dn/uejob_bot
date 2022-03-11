@@ -28,6 +28,7 @@ class Vacancy:
     @property
     def is_ready_vacancy(self) -> bool:
         return self._is_ready_vacancy
+
     @property
     def state(self):
         return self._state
@@ -62,6 +63,7 @@ class Vacancy:
     @is_ready_vacancy.setter
     def is_ready_vacancy(self, value: bool):
         self._is_ready_vacancy = value
+
 
     def get_menu(self):
         markup = self.mp_from_tuple(MENU[1])
@@ -101,7 +103,7 @@ class Vacancy:
             self.step += 1
 
         if self.step == self.STAGES_length:
-            self.text_for_message = self.parse_vacancy_any_stage()
+            self.text_for_message = self.parse_vacancy_any_stage
             self.cur_kb = None
             self.is_ready_vacancy = True
             return self
@@ -110,6 +112,7 @@ class Vacancy:
         self.text_for_message = self.vacancy_request_text
         return self
 
+    @property
     def parse_vacancy_any_stage(self):
         return ' '.join(self.info.values())
 

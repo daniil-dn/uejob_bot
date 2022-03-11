@@ -68,28 +68,6 @@ async def reboot_menu(message: types.Message, is_clean=False):
                                 reply_markup=kb, parse_mode='html')
 
 
-@dp.message_handler(commands=['new_vacancy'])
-async def start_over(message: types.Message, is_clean=True):
-    if is_clean:
-        # удаляет 5 последних сообщений, НО - 1 поэтому не удаляет текущее
-        await clear_prev_messages(message.message_id - 1, chat_id=message.chat.id)
-
-    # Сообщение, с которым будем работать. И позже запихиваем его в объект вакансии
-    mg = await bot.send_message(message.chat.id, "STARTING", reply_markup=None, parse_mode='html')
-    print(f"mg = {mg.message_id}")
-
-    # Инициализация объекта вакансии с главным сообщением и чатом
-    cur_vacancy = Vacancy(message_id=mg.message_id, chat_id=message.chat.id)
-
-    # Привязываем вакансию к чату
-    vacancy_per_user[message.chat.id] = cur_vacancy
-    cur_vacancy.state = 'filling'
-
-    kb, text_message = cur_vacancy.cur_kb, cur_vacancy.text_for_message
-    await bot.edit_message_text(chat_id=cur_vacancy.chat_id, message_id=cur_vacancy.message_id, text=text_message,
-                                reply_markup=kb, parse_mode='html')
-
-
 @dp.message_handler(commands=['menu'])
 async def menu(message: types.Message):
     print(f"{message.text} with id: {message.message_id}")
@@ -119,7 +97,54 @@ async def menu(message: types.Message):
                                     reply_markup=kb, parse_mode='html')
 
 
-# TODO сделать меню = позже
+@dp.message_handler(commands=['show_vacancy'])
+async def show_vacancy(message: types.Message, is_cb=False):
+    print(f"{message.text} with id: {message.message_id}")
+    chat_id = message.chat.id
+    command_mg_id = message.message_id
+    cur_vacancy = vacancy_per_user.get(chat_id, None)
+
+    if not cur_vacancy:
+        # Если нет у текущего чата объекта вакансии -
+        # вызывает команду /start
+        await reboot_menu(message, True)
+        return
+    else:
+        if cur_vacancy.state == 'filling':
+            # удалить ввод пользователя - команду
+            cur_vacancy.change_state()
+
+        text_message = cur_vacancy.parse_vacancy_any_stage
+        kb, _ = cur_vacancy.get_menu()
+
+        if not is_cb:  # удалить только ввод пользователя - команду
+            await bot.delete_message(chat_id=cur_vacancy.chat_id, message_id=command_mg_id)
+        await bot.edit_message_text(chat_id=cur_vacancy.chat_id, message_id=cur_vacancy.message_id, text=text_message,
+                                    reply_markup=kb, parse_mode='html')
+
+
+@dp.message_handler(commands=['new_vacancy'])
+async def start_over(message: types.Message, is_clean=True):
+    if is_clean:
+        # удаляет 5 последних сообщений, НО - 1 поэтому не удаляет текущее
+        await clear_prev_messages(message.message_id - 1, chat_id=message.chat.id)
+
+    # Сообщение, с которым будем работать. И позже запихиваем его в объект вакансии
+    mg = await bot.send_message(message.chat.id, "STARTING", reply_markup=None, parse_mode='html')
+    print(f"mg = {mg.message_id}")
+
+    # Инициализация объекта вакансии с главным сообщением и чатом
+    cur_vacancy = Vacancy(message_id=mg.message_id, chat_id=message.chat.id)
+
+    # Привязываем вакансию к чату
+    vacancy_per_user[message.chat.id] = cur_vacancy
+    cur_vacancy.state = 'filling'
+
+    kb, text_message = cur_vacancy.cur_kb, cur_vacancy.text_for_message
+    await bot.edit_message_text(chat_id=cur_vacancy.chat_id, message_id=cur_vacancy.message_id, text=text_message,
+                                reply_markup=kb, parse_mode='html')
+
+
 @dp.message_handler(commands=['continue_filling'])
 async def continue_filling(message: types.Message, is_cb=False):
     print(f"{message.text} with id: {message.message_id}")
@@ -138,6 +163,8 @@ async def continue_filling(message: types.Message, is_cb=False):
             await bot.delete_message(chat_id=cur_vacancy.chat_id, message_id=command_mg_id)
             return
         cur_vacancy.state = 'filling'
+        if cur_vacancy.is_ready_vacancy:
+            return
         kb, text_message = cur_vacancy.cur_kb, cur_vacancy.text_for_message
 
         if not is_cb:  # удалить только ввод пользователя - команду
@@ -206,9 +233,9 @@ async def callback_inline(cb):
                                             reply_markup=kb, parse_mode='html')
 
                 if cur_vacancy.is_ready_vacancy:
-                    mg = await bot.send_message(chat_id=chat_id, text='Вакансия создана. Введи /new')
+                    mg = await bot.send_message(chat_id=chat_id, text='Вакансия создана.')
                     cur_vacancy.message_id = mg.message_id
-
+                    await show_vacancy(cb.message, True)
                 await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text=cb.data)
             case 'menu':
                 match cb.data:
@@ -220,6 +247,8 @@ async def callback_inline(cb):
                                                   count_to_delete=1)
                         await start_over(cb.message, is_clean=False)
                     case "continue_filling":
+                        await continue_filling(cb.message, is_cb=True)
+                    case "show_vacancy":
                         await continue_filling(cb.message, is_cb=True)
 
 
