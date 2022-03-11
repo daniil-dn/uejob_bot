@@ -13,13 +13,26 @@ class Vacancy:
         :param message_id:
         :param chat_id:
         """
-        self.step = -1
+        self.step = 0
         self.message_id = message_id
         self.chat_id = chat_id
-        self.STAGES = []
-        for s in text_pattern:
-            self.STAGES.append(s)
-        self.info = []
+        self.STAGES = [s for s in text_pattern]
+        self.STAGES_length = len(self.STAGES)
+        self.info = {}
+        self.cur_kb = self.inline_kb()
+        self.cur_text_for_message = self.get_reply_text()
+        self._is_ready_vacancy = False
+
+    @property
+    def is_ready_vacancy(self) -> bool:
+        return self._is_ready_vacancy
+
+    @is_ready_vacancy.setter
+    def is_ready_vacancy(self, value: bool):
+        self._is_ready_vacancy = value
+
+    def get_menu(self):
+        return str(self.info)
 
     def update_data(self, data):
         """
@@ -28,38 +41,33 @@ class Vacancy:
         :param data:
         :return:
         """
-        cur_step_str = self.STAGES[self.step]
-        match cur_step_str:
-            case 'vacancy_title':
-                pass
-        return self.next_step()
+        self.info[self.cur_stage] = data
+        return self
 
     def next_step(self):
         """Обновляет клавиатуру, текст, step создания вакансии"""
-        self.step += 1
-        self.cur_kb = self.get_inline_kb()
+        if self.step < self.STAGES_length:
+            self.step += 1
+
+        if self.step == self.STAGES_length:
+            self.cur_text_for_message = self.parse_vacancy_any_stage()
+            self.cur_kb = None
+            self.is_ready_vacancy = True
+            return self
+
+        self.cur_kb = self.inline_kb()
         self.cur_text_for_message = self.get_reply_text()
         return self
 
-    # todo
-    def save_previous_vacancy(self) -> bool:
-        """
-        Сохраняет предыдущую готовую вакансию в буффер - рассчитан на 2 вакансии
-        :return:
-        """
-        pass
+    def parse_vacancy_any_stage(self):
+        return ' '.join(self.info.values())
 
-    def get_inline_kb(self) -> types.InlineKeyboardMarkup | None:  # TODO сделать дескриптор на проверку последнего шага
-
+    def inline_kb(self) -> types.InlineKeyboardMarkup | None:  # TODO сделать дескриптор на проверку последнего шага
         """
         Возвращает inline клавиатуру из файла markup_text.py, соответствующую текущему stage
-
         :return: клавиатуру, соответствующую текущему шагу
         """
-
-        if self.step >= len(self.STAGES):
-            return None
-        text_for_kb = text_pattern[self.STAGES[self.step]][1]
+        text_for_kb = text_pattern[self.cur_stage][1]
         row_width = len(text_for_kb)
         markup = types.InlineKeyboardMarkup(row_width=row_width)
         for item in range(row_width):
@@ -67,57 +75,25 @@ class Vacancy:
             markup.add(i)
         return markup
 
-    def get_reply_text(self) -> str:
+    def get_reply_text(self, other_text=None) -> str:
         """
         Возвращает текст из файла markup_text.py, соответствующий текущему stage
         :return: str
         """
-        if self.step >= len(self.STAGES):
-            return "/new"
-        text = text_pattern[self.STAGES[self.step]][0]
-        return text
+        text = text_pattern[self.cur_stage][0]
+        return text if not other_text else other_text
 
-    def get_vacancy_title(self):
-        pass
+    @property
+    def cur_stage(self) -> str:
+        if self.step < len(self.STAGES):
+            return self.STAGES[self.step]
+        else:
+            return self.STAGES[-1]
 
-    def get_skill_level(self, is_tag):
-        pass
-
-    def get_company_name(self, is_tag):
-        pass
-
-    def get_game_title(self):
-        pass
-
-    def get_art_code(self, is_tag, auto_code=True):
-        pass
-
-    def get_years(self):
-        pass
-
-    def platform(self, is_tag):
-        pass
-
-    def get_remote(self, is_tag):
-        pass
-
-    def get_office(self, is_tag):
-        pass
-
-    def get_location(self):
-        pass
-
-    def get_money_parsed(self):
-        pass
-
-    def get_schedule(self, default='FullTime'):
-        pass
-
-    def get_description(self):
-        pass
-
-    def get_bullet(self, splitter='='):
-        pass
-
-    def get_contact(self):
+    # todo
+    def save_previous_vacancy(self) -> bool:
+        """
+        Сохраняет предыдущую готовую вакансию в буффер - рассчитан на 2 вакансии
+        :return:
+        """
         pass
