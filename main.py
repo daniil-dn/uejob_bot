@@ -1,14 +1,15 @@
 import logging
 
-from aiogram import Bot, types
+from aiogram import Bot
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
-from aiogram.dispatcher.webhook import SendMessage
+# from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
 
 from mytoken import TOKEN as API_TOKEN
-from Vacancy import vacancy_per_user, Vacancy, types
-from testing.sqllighter3 import SQLighter
+from Vacancy import vacancy_per_user, Vacancy, types, COMMANDS
+
+# from testing.sqllighter3 import SQLighter
 
 WEBHOOK_HOST = 'https://2f1b-185-135-150-187.ngrok.io'
 WEBHOOK_PATH = '/'
@@ -48,12 +49,14 @@ async def reboot_menu(message: types.Message, is_clean=False):
     if is_clean:
         # удаляет 5 последних сообщений, НО - 1 поэтому не удаляет текущее
         await clear_prev_messages(message.message_id - 1, chat_id=message.chat.id)
+
     # start_message удаляется после первого callback
     start_message = await bot.send_message(message.chat.id, "🚀🚀🚀🚀🚀🚀🚀🚀🚀", reply_markup=None)
-    print('start_message = ', start_message)
+
     # Сообщение, с которым будем работать. И позже запихиваем его в объект вакансии
     mg = await bot.send_message(message.chat.id, "STARTING", reply_markup=None, parse_mode='html')
     print(f"mg = {mg.message_id}")
+
     # Инициализация объекта вакансии с главным сообщением и чатом
     cur_vacancy = Vacancy(message_id=mg.message_id, chat_id=message.chat.id)
 
@@ -124,7 +127,7 @@ async def show_vacancy(message: types.Message, is_cb=False):
 
 
 @dp.message_handler(commands=['new_vacancy'])
-async def start_over(message: types.Message, is_clean=True):
+async def start_over(message: types.Message, is_clean=False):
     if is_clean:
         # удаляет 5 последних сообщений, НО - 1 поэтому не удаляет текущее
         await clear_prev_messages(message.message_id - 1, chat_id=message.chat.id)
@@ -175,7 +178,7 @@ async def continue_filling(message: types.Message, is_cb=False):
                                     reply_markup=kb, parse_mode='html')
 
 
-# TODO Работа с данными без клавиатуры - описание, и др.
+# Работа с данными без клавиатуры - описание, и др.
 @dp.message_handler(content_types=['text'])
 async def text_handler(message: types.Message):
     chat_id = message.chat.id
@@ -201,6 +204,23 @@ async def text_handler(message: types.Message):
         cur_vacancy.message_id = mg.message_id
 
 
+# @dp.callback_query_handler(lambda call: call.data in COMMANDS)
+async def callback_inline(cb):
+    chat_id = cb.message.chat.id
+    cur_vacancy = vacancy_per_user.get(chat_id, None)
+
+    if not cur_vacancy:
+        await reboot_menu(cb.message)
+    else:  # Удаление первого сообщения с ракетами
+        if cur_vacancy.start_message:
+            await bot.delete_message(chat_id=cb.message.chat.id, message_id=cur_vacancy.start_message.message_id)
+            cur_vacancy.start_message = None
+
+    # Работаем только с актуальным сообщением
+    if not cb.message.message_id == cur_vacancy.message_id:
+        return
+
+
 @dp.callback_query_handler(lambda call: True)
 async def callback_inline(cb):
     print(f"{cb.message.text} with id: {cb.message.message_id}")
@@ -213,12 +233,14 @@ async def callback_inline(cb):
         await bot.edit_message_text(chat_id=chat_id, message_id=cb.message.message_id, text="/start", reply_markup=None)
         await start_over(cb.message)
         return
+    else:  # Удаление первого сообщения с ракетами
+        if cur_vacancy.start_message:
+            await bot.delete_message(chat_id=cb.message.chat.id, message_id=cur_vacancy.start_message.message_id)
+            cur_vacancy.start_message = None
 
-    if cur_vacancy.start_message:  # Удаление первого сообщения с ракетами
-        await bot.delete_message(chat_id=cb.message.chat.id, message_id=cur_vacancy.start_message.message_id)
-        cur_vacancy.start_message = None
+    # Изменяет только последнее сообщение - защита от неправильных данных
     if cb.message.message_id == cur_vacancy.message_id:
-        match cur_vacancy._state:
+        match cur_vacancy.state:
             case 'filling':
 
                 cur_vacancy.update_data(cb.data)  # Работа с данными

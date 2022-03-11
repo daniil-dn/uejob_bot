@@ -6,6 +6,8 @@ from collections import OrderedDict
 '---' сопоставимо с None, Unknown...
 
 """
+COMMANDS = ("menu", "show_vacancy", "start_over", "continue_filling")
+
 text_pattern = OrderedDict({
     "company_name": ("👇 Название компании 👇", ("indie",)),
     "vacancy_title": ("👇 Название вакансии 👇",
