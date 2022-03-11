@@ -1,5 +1,5 @@
 from aiogram import types
-from markup_text import text_pattern
+from markup_text import text_pattern, MENU
 
 vacancy_per_user = {}
 
@@ -19,30 +19,81 @@ class Vacancy:
         self.STAGES = [s for s in text_pattern]
         self.STAGES_length = len(self.STAGES)
         self.info = {}
-        self.cur_kb = self.inline_kb()
-        self.cur_text_for_message = self.get_reply_text()
+        self.cur_kb, self.text_for_message = self.get_menu()
         self._is_ready_vacancy = False
+        # menu, filling, history
+        self._state = 'menu'
+        self.start_message = None
 
     @property
     def is_ready_vacancy(self) -> bool:
         return self._is_ready_vacancy
+    @property
+    def state(self):
+        return self._state
 
+    @state.setter
+    def state(self, value):
+        match value:
+            case "menu":
+                self._state = value
+                self.cur_kb, self.text_for_message = self.get_menu()
+            case "filling":
+                self._state = value
+                self.cur_kb, self.text_for_message = self.get_filling()
+            case "history":
+                pass
+
+    def change_state(self):
+        """
+        При изменении стэта надо изменить self.state, обновить клавиатуру и обновить текст
+        :param to_value:
+        :return:
+        """
+        match self._state:
+            case "menu":
+                self.state = "filling"
+            case "filling":
+                self.state = "menu"
+            case "history":
+                pass
+
+    # Итоговый вывод вакансии и отправки нового сообщения для конечного для цикла
     @is_ready_vacancy.setter
     def is_ready_vacancy(self, value: bool):
         self._is_ready_vacancy = value
 
     def get_menu(self):
-        return str(self.info)
+        markup = self.mp_from_tuple(MENU[1])
+        return (markup, MENU[0])
+
+    def get_filling(self) -> tuple:
+        markup = self.vacancy_filling_kb
+        text = self.vacancy_request_text
+        return (markup, text)
+
+    def mp_from_tuple(self, data_tuple) -> types.InlineKeyboardMarkup:
+        """
+        Создает клавиатуру из кортежа данных
+
+        :param data_tuple: (text: call_back_tags)
+        :return: inline keyboard markup
+        """
+        mp_width = len(data_tuple)
+        mp = types.InlineKeyboardMarkup(row_width=mp_width)
+        for i in range(mp_width):
+            text, cb = data_tuple[i]
+            item = types.InlineKeyboardButton(text, callback_data=cb)
+            mp.add(item)
+        return mp
 
     def update_data(self, data):
         """
-        Обновляет текущие данные для парсинга вакансии.
-        Обновляет шаг, клавиатуру, текст для запроса данных.
+        Добавляет данные для парсинга вакансии.
         :param data:
         :return:
         """
         self.info[self.cur_stage] = data
-        return self
 
     def next_step(self):
         """Обновляет клавиатуру, текст, step создания вакансии"""
@@ -50,19 +101,23 @@ class Vacancy:
             self.step += 1
 
         if self.step == self.STAGES_length:
-            self.cur_text_for_message = self.parse_vacancy_any_stage()
+            self.text_for_message = self.parse_vacancy_any_stage()
             self.cur_kb = None
             self.is_ready_vacancy = True
             return self
 
-        self.cur_kb = self.inline_kb()
-        self.cur_text_for_message = self.get_reply_text()
+        self.cur_kb = self.vacancy_filling_kb
+        self.text_for_message = self.vacancy_request_text
         return self
 
     def parse_vacancy_any_stage(self):
         return ' '.join(self.info.values())
 
-    def inline_kb(self) -> types.InlineKeyboardMarkup | None:  # TODO сделать дескриптор на проверку последнего шага
+    # todo вставить mp_from_tuple()
+    # markup keyboard text from file markup_text.py
+    @property
+    def vacancy_filling_kb(
+            self) -> types.InlineKeyboardMarkup:  # TODO сделать дескриптор на проверку последнего шага
         """
         Возвращает inline клавиатуру из файла markup_text.py, соответствующую текущему stage
         :return: клавиатуру, соответствующую текущему шагу
@@ -75,7 +130,9 @@ class Vacancy:
             markup.add(i)
         return markup
 
-    def get_reply_text(self, other_text=None) -> str:
+    #  text from file markup_text.py
+    @property
+    def vacancy_request_text(self, other_text=None) -> str:
         """
         Возвращает текст из файла markup_text.py, соответствующий текущему stage
         :return: str
