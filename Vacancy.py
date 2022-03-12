@@ -5,6 +5,10 @@ vacancy_per_user = {}
 
 
 class Vacancy:
+    """
+
+    """
+
     def __init__(self, message_id, chat_id):
         """
         Создает new объект вакансии.
@@ -20,7 +24,7 @@ class Vacancy:
         self.STAGES = [s for s in text_pattern]
         self.STAGES_length = len(self.STAGES)
         self.info = {}
-        self.cur_kb, self.text_for_message = None, ""
+        self._cur_kb, self._text_for_message = None, ""
         self._is_ready_vacancy = False
 
         # menu, filling, history
@@ -40,15 +44,16 @@ class Vacancy:
     def state(self):
         return self._state
 
+    # Полностью меняет состояние + все переменные соответствующие ему
     @state.setter
     def state(self, value):
         match value:
             case "menu":
                 self._state = value
-                self.cur_kb, self.text_for_message = self.get_menu()
+                self._cur_kb, self._text_for_message = self._get_menu()
             case "filling":
                 self._state = value
-                self.cur_kb, self.text_for_message = self.get_filling()
+                self._cur_kb, self._text_for_message = self._get_filling()
             case "history":
                 pass
 
@@ -75,7 +80,7 @@ class Vacancy:
 
     # markup keyboard text from file markup_text.py
     @property
-    def vacancy_filling_kb(self) -> types.InlineKeyboardMarkup:
+    def _vacancy_filling_kb(self) -> types.InlineKeyboardMarkup:
         """
         Возвращает inline клавиатуру из файла markup_text.py, соответствующую текущему stage
         :return: клавиатуру, соответствующую текущему шагу
@@ -87,7 +92,7 @@ class Vacancy:
 
     #  text from file markup_text.py
     @property
-    def vacancy_request_text(self, other_text=None) -> str:
+    def _vacancy_request_text(self, other_text=None) -> str:
         """
         Возвращает текст из файла markup_text.py, соответствующий текущему stage
         :return: str
@@ -106,13 +111,21 @@ class Vacancy:
         else:
             return self.STAGES[-1]
 
-    def get_menu(self):
+    @property
+    def markup_and_text(self) -> dict[str: str]:
+        """Актуальные для каждого шага Словарь из клавиатуры и текста
+        return: "reply_markup": str, "text": str
+        """
+        return {"reply_markup": self._cur_kb, "text": self._text_for_message}
+
+
+    def _get_menu(self):
         markup = self.mp_from_tuple(MENU[1])
         return markup, MENU[0]
 
-    def get_filling(self) -> tuple:
-        markup = self.vacancy_filling_kb
-        text = self.vacancy_request_text
+    def _get_filling(self) -> tuple:
+        markup = self._vacancy_filling_kb
+        text = self._vacancy_request_text
         return markup, text
 
     def update_data(self, data):
@@ -129,13 +142,13 @@ class Vacancy:
             self.step += 1
 
         if self.step == self.STAGES_length:
-            self.text_for_message = self.parse_vacancy_any_stage
-            self.cur_kb = None
+            self._text_for_message = self.parse_vacancy_any_stage
+            self._cur_kb = None
             self.is_ready_vacancy = True
             return self
 
-        self.cur_kb = self.vacancy_filling_kb
-        self.text_for_message = self.vacancy_request_text
+        self._cur_kb = self._vacancy_filling_kb
+        self._text_for_message = self._vacancy_request_text
         return self
 
     def save_previous_vacancy(self) -> bool:
