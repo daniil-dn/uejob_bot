@@ -53,7 +53,7 @@ def callback_inline(call):
         elif call.data == "bad":
             bot.send_message(call.message.chat.id, "That's not so good(")
 
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.mg_id,
                               text="I'm fine.", reply_markup=None)
         bot.answer_callback_query(show_alert=False, callback_query_id=call.id, text="It's a test message...")
     except Exception as e:

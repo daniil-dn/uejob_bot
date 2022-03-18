@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 """
 COMMANDS = ("menu", "show_vacancy", "start_over", "continue_filling")
-
 text_pattern = OrderedDict({
     "company_name": ("👇 Название компании 👇", ("indie",)),
     "vacancy_title": ("👇 Название вакансии 👇",
@@ -33,9 +32,42 @@ text_pattern = OrderedDict({
     "useful": ("ℹ️  Полезная информация ℹ️\n'=' - разделитель", ('---',)),
     "contacts": ("📨 Контакты 📨", ('---',)),
 })
+# {"tags": (
+# cb.data,
+# {tags:cb.data,tags:cb.data,..})
+# }
 
-# TUPLE с элементами меню
-# (text: call_back_tags)
-MENU = ("МЕНЮ", (("Вывести текущую вакансию", "show_vacancy"),
-                 ("Создать новую вакансию", "start_over"),
-                 ("Вернуться к заполнению", "continue_filling")))
+USER_MENU = OrderedDict(
+    {"company": "🏢 Компания",
+     "vacancy": "🖥 Вакансия",
+     "description": "✍️ Описание",
+     "project": "🕹 Проект",
+     "platform": "🎮 Платформа",
+     "sub_experince": (
+         "🎓 Опыт",
+         {'years': 'Years', "junior": "Junior <1year", "middle": "Middle 1-3years", "senior": "Senior >3years"}),
+     "work_time": "⏰ Загрузка",
+     "payment": "💰 Оплата",
+     "location": "🗺 Локация",
+     "duty": "🚀 Обязанности",
+     "skills": "💪 Скилл сет",
+     "add_skills": "🦾 Доп. скиллы",
+     "conditions": "🍪 Условия",
+     "contacts": "📨 Контакты",
+
+     # {"callback_tag": ("menu_text",
+     #                  {'submenu_tag': ("submenu_text",
+     #                                   {"sub_submenu": "sub_submenu_text"})}),
+     #  }
+     })
+# text, auto_input, inline_input
+MENU_ACTIONS = {
+    "all": "text",
+    'nothing_exceptions': "root, sub_experince, junior, senior, middle"
+}
+MP_WIDTH = {
+    "all": 3,
+    "sub_experince": 4
+}
+# todo
+BOTTOM_menu = {"send_vacancy": "✅ Опубликовать", "reset": "❌ Сброс"}

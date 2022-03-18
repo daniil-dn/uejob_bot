@@ -1,162 +1,68 @@
-from aiogram import types
-from markup_text import text_pattern, MENU, COMMANDS
+from collections import OrderedDict
+
+from aiogram import types, Bot
+from markup_text import text_pattern, USER_MENU, MENU_ACTIONS, MP_WIDTH
 
 vacancy_per_user = {}
 
 
 class Vacancy:
-    """
 
-    """
-
-    def __init__(self, message_id, chat_id):
+    def __init__(self, main_mg_id, chat_id):
         """
         Создает new объект вакансии.
         Инициализирует Шаги из файлы markup_text.py
 
-        :param message_id:
+        :param main_mg_id:
         :param chat_id:
         """
-        self.step = 0
-        self.message_id = message_id
+        self.mg_id = main_mg_id
         self.chat_id = chat_id
 
-        self.STAGES = [s for s in text_pattern]
-        self.STAGES_length = len(self.STAGES)
         self.info = {}
-        self._cur_kb, self._text_for_message = None, ""
-        self._is_ready_vacancy = False
 
-        # menu, filling, history
-        self.state = 'menu'
-        self.start_message = None
-
-    @property
-    def is_ready_vacancy(self) -> bool:
-        return self._is_ready_vacancy
-
-    # Итоговый вывод вакансии и отправки нового сообщения для конечного для цикла
-    @is_ready_vacancy.setter
-    def is_ready_vacancy(self, value: bool):
-        self._is_ready_vacancy = value
-
-    @property
-    def state(self):
-        return self._state
-
-    # Полностью меняет состояние + все переменные соответствующие ему
-    @state.setter
-    def state(self, value):
-        match value:
-            case "menu":
-                self._state = value
-                self._cur_kb, self._text_for_message = self._get_menu()
-            case "filling":
-                self._state = value
-                self._cur_kb, self._text_for_message = self._get_filling()
-            case "history":
-                pass
-
-    # меняет state между filling / menu
-    def change_state(self):
-        """
-        При изменении стэта надо изменить self.state, обновить клавиатуру и обновить текст
-        :param:
-        :return:
-        """
-        match self._state:
-            case "menu":
-                self.state = "filling"
-            case "filling":
-                self.state = "menu"
-            case "history":
-                pass
-            case True:
-                self.state = "menu"
+        # по дефолту попадаем в корень меню
+        self.menu = self.render_menu(USER_MENU)
 
     @property
     def parse_vacancy_any_stage(self):
         return ' '.join(self.info.values())
 
-    # markup keyboard text from file markup_text.py
     @property
-    def _vacancy_filling_kb(self) -> types.InlineKeyboardMarkup:
-        """
-        Возвращает inline клавиатуру из файла markup_text.py, соответствующую текущему stage
-        :return: клавиатуру, соответствующую текущему шагу
-        """
-        text_for_kb = text_pattern[self.cur_stage][1]
-        row_width = len(text_for_kb)
-        markup_data = [(i, i) for i in text_for_kb]
-        return self.mp_from_tuple(markup_data)
+    def get_mp(self):
+        row_width = self.menu.row_width
+        children_len = len(self.menu.children)
+        action = MENU_ACTIONS.get(self.menu.cb_tag, MENU_ACTIONS['all'])
 
-    #  text from file markup_text.py
-    @property
-    def _vacancy_request_text(self, other_text=None) -> str:
-        """
-        Возвращает текст из файла markup_text.py, соответствующий текущему stage
-        :return: str
-        """
-        text = text_pattern[self.cur_stage][0]
-        return text if not other_text else other_text
+        mp = types.InlineKeyboardMarkup(row_width=row_width)
 
-    @property
-    def cur_stage(self) -> str:
-        """
-        Вывод названия шага по номеру шага. Если шаг больше общего количества шагов - return последний шаг
-        :return:
-        """
-        if self.step < len(self.STAGES):
-            return self.STAGES[self.step]
-        else:
-            return self.STAGES[-1]
+        counter = 0
+        cache = []
+        for tag, next_menu in self.menu.children.items():
+            cache.append(types.InlineKeyboardButton(next_menu.text, callback_data=tag))
+            counter += 1
+            if counter % row_width == 0 or counter == len(self.menu.children):
+                mp.add(*cache)
+                cache = list()
 
-    @property
-    def markup_and_text(self) -> dict[str: str]:
-        """Актуальные для каждого шага Словарь из клавиатуры и текста
-        return: "reply_markup": str, "text": str
-        """
-        return {"reply_markup": self._cur_kb, "text": self._text_for_message}
+        # для sub_menu всегда выводит кнопку Назад
+        if not self.menu.parent == 'root':
+            mp.add(self.menu.back_button())
 
+        return mp
 
-    def _get_menu(self):
-        markup = self.mp_from_tuple(MENU[1])
-        return markup, MENU[0]
+    async def update_vacancy_text(self, chat_id, bot: Bot):
+        if self.info:
+            text = str(self.info)
+            try:
+                await bot.edit_message_text(text, chat_id, self.mg_id)
+            except Exception as err:
+                print(err)
 
-    def _get_filling(self) -> tuple:
-        markup = self._vacancy_filling_kb
-        text = self._vacancy_request_text
-        return markup, text
-
-    def update_data(self, data):
-        """
-        Добавляет данные для парсинга вакансии.
-        :param data:
-        :return:
-        """
-        self.info[self.cur_stage] = data
-
-    def next_step(self):
-        """Обновляет клавиатуру, текст, step создания вакансии"""
-        if self.step < self.STAGES_length:
-            self.step += 1
-
-        if self.step == self.STAGES_length:
-            self._text_for_message = self.parse_vacancy_any_stage
-            self._cur_kb = None
-            self.is_ready_vacancy = True
-            return self
-
-        self._cur_kb = self._vacancy_filling_kb
-        self._text_for_message = self._vacancy_request_text
-        return self
-
-    def save_previous_vacancy(self) -> bool:
-        """
-        Сохраняет предыдущую готовую вакансию в буффер - рассчитан на 2 вакансии
-        :return:
-        """
-        pass
+    @staticmethod
+    def render_menu(menu_dict: OrderedDict = USER_MENU):
+        root_menu = MenuItem(parent='root', children_dict=menu_dict)
+        return root_menu
 
     @staticmethod
     def mp_from_tuple(data_tuples: tuple) -> types.InlineKeyboardMarkup:
@@ -174,3 +80,45 @@ class Vacancy:
             item = types.InlineKeyboardButton(text, callback_data=cb)
             mp.add(item)
         return mp
+
+
+class MenuItem:
+    def __init__(self, cb_tag='root', text=None, parent=None, children_dict: OrderedDict = None):
+        self.parent = parent
+        self.text = text
+        self.cb_tag = cb_tag
+        self.children = {}
+
+        # создание дерева меню
+        # с помощью рекурсии создаются элементы меню(ноды), связанные с предыддущим элементом.
+        if isinstance(children_dict, dict):
+            for tag, value in children_dict.items():
+                if isinstance(value, tuple):
+                    self.children[tag] = MenuItem(tag, value[0], self, value[1])
+                else:
+                    self.children[tag] = MenuItem(tag, value, self)
+
+    def __str__(self):
+        return str(self.children)
+
+    @property
+    def row_width(self):
+        return MP_WIDTH.get(self.cb_tag, MP_WIDTH['all'])
+
+    def menu_action(self, MENU_ACTIONS: dict = MENU_ACTIONS):
+        if self.cb_tag in MENU_ACTIONS['nothing_exceptions']:
+            return 'nothing'
+        else:
+            return MENU_ACTIONS.get(self.cb_tag, MENU_ACTIONS['all'])
+
+    def back_menu(self):
+        # Возвращает предыдущее меню, если это не root меню
+        return self.parent if self.parent != 'root' else None
+
+    def back_mp(self):
+        mp = types.InlineKeyboardMarkup(row_width=1)
+        mp.add(self.back_button())
+        return mp
+
+    def back_button(self):
+        return types.InlineKeyboardButton("Назад", callback_data='back_menu')
