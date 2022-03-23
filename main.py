@@ -172,7 +172,6 @@ async def jun_mid_sen(cb):
 
     if cb_mg_id == cur_vacancy.mg_id:
         cur_vacancy.info['jun_mid_sen'] = cb.data
-
         try:
             await cur_vacancy.update_vacancy_text(chat_id, bot)
             await menu_return(cb.message)
