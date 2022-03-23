@@ -3,7 +3,9 @@ import logging
 from aiogram import Bot
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
-# from aiogram.dispatcher.webhook import SendMessage
+from aiogram.utils.exceptions import MessageNotModified
+from contextlib import suppress
+from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
 
 from mytoken import TOKEN as API_TOKEN
@@ -11,7 +13,7 @@ from Vacancy import vacancy_per_user, Vacancy, types, MENU_ACTIONS
 
 # from testing.sqllighter3 import SQLighter
 
-WEBHOOK_HOST = 'https://add3-94-242-171-107.ngrok.io'
+WEBHOOK_HOST = 'https://3b53-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -76,17 +78,19 @@ async def clear_markup(current_message_id, chat_id, count_to_delete=5):
 # Команда для полной перезагрузки и начала с меню
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    """
-    При старте бота
-        Приветственное сообщение
-        Создание новой вакансии
-    :param message:
-    :return: None
-    """
-    chat_id, mg_id = chat_message_id(message)
-    await bot.send_message(chat_id, text=f"Hello, {message.from_user.full_name}")
+    with suppress(MessageNotModified):
+        """
+        При старте бота
+            Приветственное сообщение
+            Создание новой вакансии
+        :param message:
+        :return: None
+        """
+        chat_id, mg_id = chat_message_id(message)
+        await bot.send_message(chat_id, text=f"Hello, {message.from_user.full_name}",
+                               reply_markup=types.ReplyKeyboardRemove())
 
-    await new_vacancy(message)
+        await new_vacancy(message)
 
 
 @dp.message_handler(commands=['new'])
@@ -98,116 +102,191 @@ async def new_vacancy(message: types.Message):
     :param message:
     :return:
     """
-    chat_id, mg_id = chat_message_id(message)
-    # на всякий случай очищает клавиатуры последних 2 сообщений
-    await clear_markup(mg_id, chat_id)
+    with suppress(MessageNotModified):
+        chat_id, mg_id = chat_message_id(message)
+        # на всякий случай очищает клавиатуры последних 2 сообщений
+        await clear_markup(mg_id, chat_id)
 
-    # Работаем с этим сообщением
-    main_mg = await bot.send_message(chat_id, ' MENU')
-    cur_vacancy = Vacancy(main_mg.message_id, chat_id)
+        # Работаем с этим сообщением
+        main_mg = await bot.send_message(chat_id, ' MENU')
+        cur_vacancy = Vacancy(main_mg.message_id, chat_id)
 
-    vacancy_per_user[chat_id] = cur_vacancy
+        vacancy_per_user[chat_id] = cur_vacancy
 
-    mp = cur_vacancy.get_mp
+        mp = cur_vacancy.get_mp
 
-    await bot.edit_message_reply_markup(chat_id, cur_vacancy.mg_id, reply_markup=mp)
-    return cur_vacancy
+        await bot.edit_message_reply_markup(chat_id, cur_vacancy.mg_id, reply_markup=mp)
+        return cur_vacancy
 
 
-# Работа с данными без клавиатуры - описание, и др.
+# Работа с данными без клавиатуры - описание, и др., где требуется ввод с клавиатуры
 @dp.message_handler(content_types=['text'])
 async def text_handler(message: types.Message):
-    chat_id, cb_mg_id = chat_message_id(message)
-    cur_vacancy = vacancy_per_user.get(chat_id, None)
+    with suppress(MessageNotModified):
+        chat_id, cb_mg_id = chat_message_id(message)
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
 
-    if cur_vacancy:
+        if cur_vacancy:
 
-        action = cur_vacancy.menu.menu_action()
+            action = cur_vacancy.menu.menu_action()
 
-        if action == 'text':
-            cur_vacancy.info[cur_vacancy.menu.cb_tag] = message.text
-            await cur_vacancy.update_vacancy_text(message.chat.id, bot)
-            await menu_return(message)
-            print(cur_vacancy.info)
-        # удаляет сообщение пользователя, когда не надо вводить ничего!
-        await delete_prev_messages(message.message_id, message.chat.id, 1)
+            if action == 'text':
+                if message.text.lower() == 'clear' or message.text == '/clear':
+                    cur_vacancy.info[cur_vacancy.menu.cb_tag] = None
+                    await menu_return(message)
+                cur_vacancy.info[cur_vacancy.menu.cb_tag] = message.text
+                await cur_vacancy.update_vacancy_text(message.chat.id, bot)
+                await menu_return(message)
+                print(cur_vacancy.info)
+            # удаляет сообщение пользователя, когда не надо вводить ничего!
+            await delete_prev_messages(message.message_id, message.chat.id, 1)
 
 
 # Меню заполнения вакансии
 @dp.callback_query_handler(lambda call: call.data == 'back_menu')
 async def menu_return(cb):
-    try:
+    with suppress(MessageNotModified):
+        try:
+            chat_id, cb_mg_id = chat_message_id(cb)
+            cur_vacancy = vacancy_per_user.get(chat_id, None)
+            if not cur_vacancy:
+                cur_vacancy = await new_vacancy(cb.message)
+
+            # Работаем только с актуальным сообщением
+            if cb_mg_id == cur_vacancy.mg_id or type(cb) is types.Message:
+                try:
+                    cur_vacancy.menu = cur_vacancy.menu.back_menu()
+                except Exception as err:
+                    print(err)
+                mp = cur_vacancy.get_mp
+                try:
+                    await bot.edit_message_reply_markup(chat_id, cur_vacancy.mg_id, reply_markup=mp)
+                except Exception as err:
+                    print(err)
+            else:  # одно из предыдущий Сообщений
+                await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Error!")
+
+            if type(cb) is types.CallbackQuery:
+                await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
+        except Exception as err:
+            if type(cb) is types.CallbackQuery:
+                await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Error!")
+
+
+@dp.callback_query_handler(lambda call: call.data in ('Junior', 'Middle', "Senior"))
+async def jun_mid_sen(cb):
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
+
         cur_vacancy = vacancy_per_user.get(chat_id, None)
         if not cur_vacancy:
-            cur_vacancy = await new_vacancy(cb.message)
+            await new_vacancy(cb.message)
+            return
 
-        # Работаем только с актуальным сообщением
-        if cb_mg_id == cur_vacancy.mg_id or type(cb) is types.Message:
-            cur_vacancy.menu = cur_vacancy.menu.back_menu()
-            mp = cur_vacancy.get_mp
+        if cb_mg_id == cur_vacancy.mg_id:
+            cur_vacancy.info['jun_mid_sen'] = cb.data
             try:
-                await bot.edit_message_reply_markup(chat_id, cur_vacancy.mg_id, reply_markup=mp)
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                await menu_return(cb.message)
             except Exception as err:
                 print(err)
-        else:  # одно из предыдущий Сообщений
-            await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Error!")
-        if type(cb) is types.CallbackQuery:
-            await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
-    except Exception as err:
-        if type(cb) is types.CallbackQuery:
-            await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Error!")
-        logging.info(err)
 
 
-@dp.callback_query_handler(lambda call: call.data in ('junior', 'middle', "senior"))
-async def jun_mid_sen(cb):
-    # для удобной работы с данными сообщения
-    chat_id, cb_mg_id = chat_message_id(cb)
+@dp.callback_query_handler(lambda call: call.data in ('art', 'code'))
+async def art_code_cb(cb):
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
+        chat_id, cb_mg_id = chat_message_id(cb)
 
-    cur_vacancy = vacancy_per_user.get(chat_id, None)
-    if not cur_vacancy:
-        await new_vacancy(cb.message)
-        return
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
+        if not cur_vacancy:
+            await new_vacancy(cb.message)
+            return
 
-    if cb_mg_id == cur_vacancy.mg_id:
-        cur_vacancy.info['jun_mid_sen'] = cb.data
-        try:
-            await cur_vacancy.update_vacancy_text(chat_id, bot)
-            await menu_return(cb.message)
-        except Exception as err:
-            print(err)
+        if cb_mg_id == cur_vacancy.mg_id:
+            cur_vacancy.info['art_code'] = cb.data
+            try:
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                await menu_return(cb.message)
+            except Exception as err:
+                print(err)
+
+
+@dp.callback_query_handler(
+    lambda call: call.data in ('Remote', 'PC', "Console", "VR", "Mobile"))
+async def platform_cb(cb):
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
+        chat_id, cb_mg_id = chat_message_id(cb)
+
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
+        if not cur_vacancy:
+            await new_vacancy(cb.message)
+            return
+
+        if cb_mg_id == cur_vacancy.mg_id:
+            if not cur_vacancy.info.get(cb.data, None):
+                cur_vacancy.info[cb.data] = cb.data
+            else:
+                cur_vacancy.info[cb.data] = None
+            try:
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                    reply_markup=cur_vacancy.get_mp)
+            except Exception as err:
+                print(err)
+
+
+@dp.callback_query_handler(
+    lambda call: call.data in ('Full-Time', "Part-Time", "Contract"))
+async def platform_cb(cb):
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
+        chat_id, cb_mg_id = chat_message_id(cb)
+
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
+        if not cur_vacancy:
+            await new_vacancy(cb.message)
+            return
+
+        if cb_mg_id == cur_vacancy.mg_id:
+            if not cur_vacancy.info.get(cb.data, None):
+                cur_vacancy.info['schedule'] = cb.data
+            else:
+                cur_vacancy.info['schedule'] = None
+            try:
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                    reply_markup=cur_vacancy.get_mp)
+            except Exception as err:
+                print(err)
 
 
 # Меню заполнения вакансии
 # проверка cb на тег меню
 @dp.callback_query_handler(lambda call: True)
 async def callback4_all(cb):
-    # для удобной работы с данными сообщения
-    chat_id, cb_mg_id = chat_message_id(cb)
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
+        chat_id, cb_mg_id = chat_message_id(cb)
 
-    cur_vacancy = vacancy_per_user.get(chat_id, None)
-    if not cur_vacancy:
-        await new_vacancy(cb.message)
-        return
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
+        if not cur_vacancy:
+            await new_vacancy(cb.message)
 
-    try:  # чтобы не было лишинего ввода от пользователя
-        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=cb_mg_id, reply_markup=None)
-    except Exception as err:
-        print(err)
-
-    # Работаем только с актуальным сообщением
-    if cb_mg_id == cur_vacancy.mg_id:
-        if cb.data in cur_vacancy.menu.children.keys():
-            cur_vacancy.menu = cur_vacancy.menu.children[cb.data]
-            mp = cur_vacancy.get_mp
-            try:
-                await bot.edit_message_reply_markup(chat_id, cb_mg_id, reply_markup=mp)
-            except Exception as err:
-                print(err)
-    else:  # одно из предыдущий Сообщений
-        await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Error!", cache_time=2)
-    await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
+        # Работаем только с актуальным сообщением
+        if cb_mg_id == cur_vacancy.mg_id:
+            if cb.data in cur_vacancy.menu.children.keys():
+                cur_vacancy.menu = cur_vacancy.menu.children[cb.data]
+                mp = cur_vacancy.get_mp
+                try:
+                    await bot.edit_message_reply_markup(chat_id, cb_mg_id, reply_markup=mp)
+                except Exception as err:
+                    print(err)
+        else:  # одно из предыдущий Сообщений
+            await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Error!", cache_time=2)
+        await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
 
 
 async def on_startup(dp):

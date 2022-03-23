@@ -20,13 +20,12 @@ class Vacancy:
         self.chat_id = chat_id
 
         self.info = {}
+        self.info['payment'] = "По договоренности"
+        self.info['schedule'] = "Full-Time"
+        self.info['jun_mid_sen'] = 'Middle'
 
         # по дефолту попадаем в корень меню
         self.menu = self.render_menu(USER_MENU)
-
-    @property
-    def parse_vacancy_any_stage(self):
-        return ' '.join(self.info.values())
 
     @property
     def get_mp(self):
@@ -58,80 +57,175 @@ class Vacancy:
         :return:
         """
         if self.info:
-
-            text = f"""
-{self.tags()}
-{self.vacancy_title()} {self.company()}
-            
-{self.project()} {self.platform()}
-{self.experience()}
-{self.payment()}
-{self.schedule()}
-{self.location()}
-            
-{self.description()}
-            
-{self.duty()}
-{self.skills()}
-{self.add_skills()}
-{self.conditions()}
-{self.useful_info()}
-{self.contacts()}
-            """
-            # text = str(self.info)
-
+            text = self.tags() + '\n\n'
+            text += "<b>" + self.vacancy_title() + self.company() + "</b>" + '\n\n' \
+                    + self.project() + self.platform() + '\n' \
+                    + '🧠 ' + self.jun_mid_sen() + self.experience() + '\n' \
+                    + self.payment() \
+                    + self.schedule() \
+                    + self.location() \
+                    + self.description() \
+                    + self.duty() \
+                    + self.skills() \
+                    + self.add_skills() \
+                    + self.conditions() \
+                    + self.useful_info() \
+                    + self.contacts()
+            print(self.vacancy_title())
+            print(self.company())
             try:
-                await bot.edit_message_text(text, chat_id, self.mg_id)
+                await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
             except Exception as err:
                 print(err)
 
     def tags(self):
-        return ""
+        """
+        #UnrealEngine #GameDev #FullTime #Art #Middle #PC #Remote #Office #ProgramAce
+
+        :return:
+        """
+        tags = "#UnrealEngine #GameDev "
+        tags += self.schedule(is_tag=True)
+        tags += self.art_code()
+
+        tags += self.jun_mid_sen(is_tag=True)
+        tags += self.platform(is_tag=True)
+
+        tags += self.location(is_tag=True)
+        tags += self.company(is_tag=True)
+
+        return tags
+
+    def art_code(self):
+        art_code_var = self.info.get('art_code', '')
+        return f"#{art_code_var.capitalize()} " if art_code_var else ''
+
+    def jun_mid_sen(self, is_tag=False):
+
+        jun_mid_sen = self.info.get('jun_mid_sen', '')
+        if is_tag:
+            return f"#{jun_mid_sen} " if jun_mid_sen else ''
+        else:
+            return f"{jun_mid_sen} " if jun_mid_sen else ''
 
     def vacancy_title(self):
-        return self.info.get('vacancy', '')
+        title = self.info.get('vacancy', '')
+        result = self.jun_mid_sen() + "UNREAL ENGINE " + title
+        return result.upper() + ' ' if title else result.upper()
 
     def company(self, is_tag=False):
-        return self.info.get('company', '')
+        company = self.info.get('company', '')
+
+        if is_tag and company:
+            return f"#{company.title().replace(' ', '').replace('-', '')} "
+
+        if not is_tag and company:
+            company = company.capitalize() if company and company[0].islower() else company
+            return f'({company})'
+        return ''
 
     def project(self):
-        return self.info.get('project', '')
+        name = self.info.get('project', 'Unknown ')
+        return '🕹 ' + name.capitalize()
 
     def platform(self, is_tag=False):
-        return self.info.get('platform', '')
+        pc = self.info.get('PC', None)
+        console = self.info.get('Console', None)
+        vr = self.info.get('VR', None)
+        mobile = self.info.get('Mobile', None)
+
+        if is_tag:
+            pc = f'#{pc} ' if pc else ''
+            console = f'#{console} ' if console else ''
+            vr = f'#{vr} ' if vr else ''
+            mobile = f'#{mobile} ' if mobile else ''
+            result = pc + console + vr + mobile
+
+        else:
+            to_join = []
+            for i in (pc, console, vr, mobile):
+                if i:
+                    to_join.append(i)
+            result = ', '.join(to_join)
+            result = f'({result})'
+
+        return result
 
     def experience(self, is_tag=False):
-        return self.info.get('jun_mid_sen', '') + self.info.get('years', '')
+        years = self.info.get('years', '')
+        return f"({years}+)" if years else ""
 
     def schedule(self, is_tag=False):
-        return self.info.get('schedule', '')
+        schedule = self.info.get('schedule', '')
+        if is_tag and schedule:
+            return f'#{schedule.replace("-", "")} '
+        elif schedule:
+            return f"⏰ {schedule} \n"
+        else:
+            return ''
 
     def payment(self):
-        return self.info.get('payment', '')
+        return f"💰 {self.info.get('payment', '')}\n"
 
     def location(self, is_tag=False):
-        return self.info.get('location', '')
+        remote = self.info.get('Remote', None)
+        office = self.info.get('Office', None)
 
-    def description(self, is_tag=False):
-        return self.info.get('description', '')
+        if is_tag:
+            remote = f'#Remote ' if remote else ''
+            office = '#Office ' if office else ''
+            result = remote + office
+        else:
+            remote = f'🌎 Удаленно' if remote else ''
+            office = f'👔 Офис ({office})' if office else ''
+            if remote and office:
+                result = f"{remote} || {office}" + "\n\n"
+            else:
+                result = remote + office + "\n\n"
+        return result
+
+    def description(self):
+        desc = self.info.get('description', '')
+        return f'🦄 {desc} \n\n' if desc else ''
 
     def duty(self):
-        return self.info.get('duty', '')
+        duty = self.info.get('duty', '')
+        return f'<b>🚀 Что ты будешь делать</b>{self.to_bullet(duty)}\n\n' if duty else ''
 
     def skills(self):
-        return self.info.get('skills', '')
+        skills = self.info.get('skills', '')
+        return f'<b>📚 Твои скиллы</b>{self.to_bullet(skills)}\n\n' if skills else ''
 
     def add_skills(self):
-        return self.info.get('add_skills', '')
+        add_skills = self.info.get('add_skills', '')
+        return f'<b>👍 Круто, если знаешь</b>{self.to_bullet(add_skills)}\n\n' if add_skills else ''
 
     def conditions(self):
-        return self.info.get('conditions', '')
+        cond = self.info.get('conditions', '')
+        return f'<b>🍪 Условия и плюшки</b>{self.to_bullet(cond)}\n\n' if cond else ''
 
     def useful_info(self):
-        return self.info.get('useful_info', '')
+        useful_info = self.info.get('useful_info', '')
+        return f'<b>ℹ️ Полезная информация</b>{self.to_bullet(useful_info)}\n\n' if useful_info else ''
 
     def contacts(self):
-        return self.info.get('contacts', '')
+        contacts = self.info.get('contacts', '')
+
+        return f'<b>📨 Контакты</b>\n{contacts}\nVacancy here 👌' if contacts else ''
+
+    @staticmethod
+    def to_bullet(text: str, splitter: str = '='):
+        if text[0] in ('=') or text[1] in ('='):
+            list_items = text.split('=')
+        else:
+            list_items = text.splitlines()
+        result = ''
+
+        list_items = list(map(str.strip, list_items))
+        for item in list_items:
+            if item:
+                result += '\n• ' + item.replace(';', '').replace('·', '').replace('•', '').strip('•').strip('-').strip(). strip('.')
+        return result
 
     @staticmethod
     def render_menu(menu_dict: OrderedDict = USER_MENU):
@@ -141,12 +235,20 @@ class Vacancy:
     @staticmethod
     def mp_from_tuple(data_tuples: tuple) -> types.InlineKeyboardMarkup:
         """
-        Создает клавиатуру из кортежа данных
+            Создает
+            клавиатуру
+            из
+            кортежа
+            данных
 
-        :type data_tuples: tuple[tuple,]
-        :param data_tuples: (text, call_back_tag)
-        :return: inline keyboard markup
-        """
+            : type
+            data_tuples: tuple[tuple,]
+            :param
+            data_tuples: (text, call_back_tag)
+            :return: inline
+            keyboard
+            markup
+            """
         mp_width = len(data_tuples)
         mp = types.InlineKeyboardMarkup(row_width=mp_width)
         for i in range(mp_width):
@@ -187,7 +289,7 @@ class MenuItem:
 
     def back_menu(self):
         # Возвращает предыдущее меню, если это не root меню
-        return self.parent if self.parent != 'root' else None
+        return self.parent if self.parent != 'root' else self
 
     def back_mp(self):
         mp = types.InlineKeyboardMarkup(row_width=1)

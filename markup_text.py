@@ -41,22 +41,22 @@ text_pattern = OrderedDict({
 USER_MENU = OrderedDict(
     {"company": "🏢 Компания",
      "vacancy": "🖥 Вакансия",
+     "art_code": ("Art или Code", {'art': 'art', 'code': "code"}),
      "description": "✍️ Описание",
      "project": "🕹 Проект",
-     "platform": "🎮 Платформа",
+     "platform": ("🎮 Платформа", {'PC': 'PC', "Console": 'Console', 'VR': 'VR', "Mobile": 'Mobile'}),
      "sub_experince": (
-         "🎓 Опыт",
-         {'years': 'Years', "junior": "Junior <1year", "middle": "Middle 1-3years", "senior": "Senior >3years"}),
-     "schedule": "⏰ Загрузка",
+         "🧠 Опыт",
+         {'years': 'Years', "Junior": "Junior <1year", "Middle": "Middle 1-3years", "Senior": "Senior >3years"}),
+     "schedule": ("⏰ Загрузка", {'Full-Time': "Full-Time", 'Part-Time': "Part-Time", 'Contract': "Contract"}),
      "payment": "💰 Оплата",
-     "location": "🗺 Локация",
+     "location": ("🗺 Локация", {'Remote': 'Remote', "Office": "Office -> Город"}),
      "duty": "🚀 Обязанности",
      "skills": "💪 Скилл сет",
      "add_skills": "🦾 Доп. скиллы",
      "conditions": "🍪 Условия",
      "useful_info": "ℹ️ Полезная информация",
      "contacts": "📨 Контакты",
-     "art/code": "Какой профиль?",
 
      # {"callback_tag": ("menu_text",
      #                  {'submenu_tag': ("submenu_text",
@@ -65,12 +65,14 @@ USER_MENU = OrderedDict(
      })
 # text, auto_input, inline_input
 MENU_ACTIONS = {
-    "all": "text",
-    'nothing_exceptions': "root, sub_experince, junior, senior, middle"
+    f"all": "text",
+    'nothing_exceptions': "root, location,Remote, sub_experince, junior, senior, middle, Full-Time, Part-Time, Contract"
 }
+
 MP_WIDTH = {
     "all": 3,
-    "sub_experince": 4
+    "sub_experince": 4,
+    "platform": 4
 }
 # todo
 BOTTOM_menu = {"send_vacancy": "✅ Опубликовать", "reset": "❌ Сброс"}
