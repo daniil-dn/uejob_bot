@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from aiogram import types, Bot
-from markup_text import text_pattern, USER_MENU, MENU_ACTIONS, MP_WIDTH
+from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH
 
 vacancy_per_user = {}
 
@@ -23,6 +23,10 @@ class Vacancy:
         self.info['payment'] = "По договоренности"
         self.info['schedule'] = "Full-Time"
         self.info['jun_mid_sen'] = 'Middle'
+        self.info['project'] = 'Unknown'
+
+        self.is_art = None
+        self.is_code = None
 
         # по дефолту попадаем в корень меню
         self.menu = self.render_menu(USER_MENU)
@@ -47,6 +51,15 @@ class Vacancy:
         # для sub_menu всегда выводит кнопку Назад
         if not self.menu.parent == 'root':
             mp.add(self.menu.back_button())
+
+        if not self.menu.cb_tag in MENU_ACTIONS['nothing_exceptions'] and not self.menu.cb_tag in MENU_ACTIONS[
+            'not_clear']:
+            mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
+            if self.menu.cb_tag == "project":
+                mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
+            return mp
+
+            mp.add(types.InlineKeyboardButton(f"Очистить поле", callback_data=f'clear_{self.menu.cb_tag}'))
         return mp
 
     async def update_vacancy_text(self, chat_id, bot: Bot):
@@ -56,6 +69,11 @@ class Vacancy:
         :param bot:
         :return:
         """
+        self.update_root_checked_items()
+        self.update_platform_checked_items()
+        self.update_remote_checked_items()
+        self.update_schedule_checked_items()
+        self.update_experince_checked_items()
         if self.info:
             text = self.tags() + '\n\n'
             text += "<b>" + self.vacancy_title() + self.company() + "</b>" + '\n\n' \
@@ -78,6 +96,108 @@ class Vacancy:
             except Exception as err:
                 print(err)
 
+    async def update_code_art(self, text: str):
+        code_list = "developer, разработчик, programmer, программист, dev".split(', ')
+        art_list = "artist, художник, animator, art".split(', ')
+        self.is_code = False
+        self.is_art = False
+
+        for i in code_list:
+            if i in text:
+                self.is_code = True
+        for i in art_list:
+            if i in text:
+                self.is_art = True
+
+    def update_root_checked_items(self):
+        root: MenuItem = self.menu
+        while True:  # Получаем рут меню
+            root = root.parent if type(root.parent) is not str else root
+            if root.parent == 'root':
+                break
+        print(root)
+        for k, v in root.children.items():
+            emo = USER_MENU[k][0] if type(USER_MENU[k]) is str else USER_MENU[k][0][0]
+            if self.info.get(k, '') or k == 'location' or k == 'sub_experince':
+                if self.platform(is_tag=True) == '' and k == 'project':
+                    root.children[k].text = emo + root.children[k].text[1:]
+                elif self.location(is_tag=True) == '' and k == 'location':
+                    root.children[k].text = emo + root.children[k].text[1:]
+                elif self.jun_mid_sen(is_tag=True) == '' and k == 'sub_experince':
+                    root.children[k].text = emo + root.children[k].text[1:]
+                else:
+                    root.children[k].text = "✅" + root.children[k].text[1:]
+            else:
+                print(emo)
+                root.children[k].text = emo + root.children[k].text[1:]
+
+    def update_platform_checked_items(self):
+        platform: MenuItem = self.menu
+        if platform.cb_tag == 'project':
+            for k, v in platform.children.items():
+                if platform.children[k].text.find("✅") == -1:
+                    starts_with = 0
+                else:
+                    starts_with = 1
+
+                if self.info.get(k, '') and k.lower() in 'pc console vr/ar mobile':
+                    platform.children[k].text = "✅" + platform.children[k].text[starts_with:]
+                else:
+                    platform.children[k].text = platform.children[k].text[starts_with:]
+
+    def update_remote_checked_items(self):
+        location: MenuItem = self.menu
+        if location.cb_tag == 'location':
+            for k, v in location.children.items():
+                print(k)
+                if location.children[k].text.find("✅") == -1:
+                    starts_with = 0
+                else:
+                    starts_with = 1
+                if self.info.get(k, ''):
+                    location.children[k].text = "✅" + location.children[k].text[starts_with:]
+                else:
+                    location.children[k].text = location.children[k].text[starts_with:]
+
+    def update_schedule_checked_items(self):
+        schedule: MenuItem = self.menu
+        if schedule.cb_tag == 'schedule':
+            for k, v in schedule.children.items():
+                print(k)
+                if schedule.children[k].text.find("✅") == -1:
+                    starts_with = 0
+                else:
+                    starts_with = 1
+                if self.info.get(k, ''):
+                    schedule.children[k].text = "✅" + schedule.children[k].text[starts_with:]
+                else:
+                    schedule.children[k].text = schedule.children[k].text[starts_with:]
+
+    def update_experince_checked_items(self):
+        schedule: MenuItem = self.menu
+        if schedule.cb_tag == 'sub_experince':
+            cur_jun_mid_sen = self.info.get('jun_mid_sen', '')
+
+            for k, v in self.menu.children.items():
+                if k in ('Intern', "Junior", "Middle", "Senior"):
+                    if self.menu.children[k].text.find("✅") == -1:
+                        starts_with = 0
+                    else:
+                        starts_with = 1
+                    if k == cur_jun_mid_sen:
+                        self.menu.children[k].text = "✅" + self.menu.children[k].text[starts_with:]
+                    else:
+                        self.menu.children[k].text = self.menu.children[k].text[starts_with:]
+                else:
+                    if self.menu.children[k].text.find("✅") == -1:
+                        starts_with = 0
+                    else:
+                        starts_with = 1
+                    if self.info.get(k, ''):
+                        self.menu.children[k].text = "✅" + self.menu.children[k].text[starts_with:]
+                    else:
+                        self.menu.children[k].text = self.menu.children[k].text[starts_with:]
+
     def tags(self):
         """
         #UnrealEngine #GameDev #FullTime #Art #Middle #PC #Remote #Office #ProgramAce
@@ -86,7 +206,7 @@ class Vacancy:
         """
         tags = "#UnrealEngine #GameDev "
         tags += self.schedule(is_tag=True)
-        tags += self.art_code()
+        tags += self.art_code_tag()
 
         tags += self.jun_mid_sen(is_tag=True)
         tags += self.platform(is_tag=True)
@@ -96,13 +216,28 @@ class Vacancy:
 
         return tags
 
-    def art_code(self):
-        art_code_var = self.info.get('art_code', '')
-        return f"#{art_code_var.capitalize()} " if art_code_var else ''
+    def art_code_tag(self):
+        result = ''
+        if self.is_code:
+            result += '#Code '
+        if self.is_art:
+            result += '#Art '
+
+        return result
 
     def jun_mid_sen(self, is_tag=False):
 
         jun_mid_sen = self.info.get('jun_mid_sen', '')
+        match jun_mid_sen:
+            case "Intern":
+                self.info['years'] = None if not self.info.get('years', None) else self.info['years']
+            case "Junior":
+                self.info['years'] = 1 if not self.info.get('years', None) else self.info['years']
+            case "Middle":
+                self.info['years'] = 3 if not self.info.get('years', None) else self.info['years']
+            case "Senior":
+                self.info['years'] = 5 if not self.info.get('years', None) else self.info['years']
+
         if is_tag:
             return f"#{jun_mid_sen} " if jun_mid_sen else ''
         else:
@@ -110,6 +245,7 @@ class Vacancy:
 
     def vacancy_title(self):
         title = self.info.get('vacancy', '')
+        title = title.lower().replace('ue5', '').replace('ue4', '').replace('ue', '').replace('unreal engine', '')
         result = self.jun_mid_sen() + "UNREAL ENGINE " + title
         return result.upper() + ' ' if title else result.upper()
 
@@ -125,19 +261,19 @@ class Vacancy:
         return ''
 
     def project(self):
-        name = self.info.get('project', 'Unknown ')
-        return '🕹 ' + name.capitalize()
+        name = self.info.get('project', 'Unknown')
+        return '🕹 ' + name.capitalize() + ' '
 
     def platform(self, is_tag=False):
         pc = self.info.get('PC', None)
         console = self.info.get('Console', None)
-        vr = self.info.get('VR', None)
+        vr = self.info.get('VR/AR', None)
         mobile = self.info.get('Mobile', None)
 
         if is_tag:
             pc = f'#{pc} ' if pc else ''
             console = f'#{console} ' if console else ''
-            vr = f'#{vr} ' if vr else ''
+            vr = f'#VR #AR ' if vr else ''
             mobile = f'#{mobile} ' if mobile else ''
             result = pc + console + vr + mobile
 
@@ -170,7 +306,7 @@ class Vacancy:
     def location(self, is_tag=False):
         remote = self.info.get('Remote', None)
         office = self.info.get('Office', None)
-
+        result = ''
         if is_tag:
             remote = f'#Remote ' if remote else ''
             office = '#Office ' if office else ''
@@ -178,10 +314,17 @@ class Vacancy:
         else:
             remote = f'🌎 Удаленно' if remote else ''
             office = f'👔 Офис ({office})' if office else ''
+
             if remote and office:
-                result = f"{remote} || {office}" + "\n\n"
+                result = f"{remote} || {office}"
+            elif remote or office:
+                result = remote + office
+
+            if self.info.get('Relocate', ""):
+                result += " <b>Relocate</b>\n\n"
             else:
-                result = remote + office + "\n\n"
+                result += "\n\n"
+
         return result
 
     def description(self):
@@ -215,16 +358,16 @@ class Vacancy:
 
     @staticmethod
     def to_bullet(text: str, splitter: str = '='):
-        if text[0] in ('=') or text[1] in ('='):
-            list_items = text.split('=')
-        else:
-            list_items = text.splitlines()
+        list_items = text.splitlines()
         result = ''
 
         list_items = list(map(str.strip, list_items))
         for item in list_items:
             if item:
-                result += '\n• ' + item.replace(';', '').replace('·', '').replace('•', '').strip('•').strip('-').strip(). strip('.')
+                line = item.strip(';.‣•-= ')
+                line = line[0].upper() + line[1:]
+                result += '\n• ' + line
+
         return result
 
     @staticmethod
