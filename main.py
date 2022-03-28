@@ -13,7 +13,7 @@ from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
 
-WEBHOOK_HOST = 'https://89b3-178-178-81-86.ngrok.io'
+WEBHOOK_HOST = 'https://2212-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
