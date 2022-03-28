@@ -42,24 +42,29 @@ class Vacancy:
 
         counter = 0
         cache = []
+        cache_bottom = []
         for tag, next_menu in self.menu.children.items():
-            cache.append(types.InlineKeyboardButton(next_menu.text, callback_data=tag))
+            if not tag in ('pre_send_vacancy', "pre_reset_vacancy"):
+                cache.append(types.InlineKeyboardButton(next_menu.text, callback_data=tag))
+            else:
+                cache_bottom.append(types.InlineKeyboardButton(next_menu.text, callback_data=tag))
+                print(tag)
             counter += 1
             if counter % row_width == 0 or counter == len(self.menu.children):
                 mp.add(*cache)
                 cache = list()
+        mp.row(*cache_bottom)
 
+        if self.menu.cb_tag == "project" and self.info.get('project', '') != 'Unknown':
+            mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
+        if not self.menu.cb_tag in MENU_ACTIONS['nothing_exceptions'].split(', ') and not self.menu.cb_tag in \
+                                                                                          MENU_ACTIONS[
+                                                                                              'not_clear'].split(', '):
+            # mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
+            mp.add(types.InlineKeyboardButton(f"Очистить поле", callback_data=f'clear_'))
         # для sub_menu всегда выводит кнопку Назад
         if not self.menu.parent == 'root':
             mp.add(self.menu.back_button())
-
-        if not self.menu.cb_tag in MENU_ACTIONS['nothing_exceptions'] and not self.menu.cb_tag in MENU_ACTIONS[
-            'not_clear'].split(','):
-            # mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
-            mp.add(types.InlineKeyboardButton(f"Очистить поле", callback_data=f'clear_'))
-        if self.menu.cb_tag == "project" and self.info.get('project', '') != 'Unknown':
-            mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
-
         # if self.menu.cb_tag == 'root':
         #     mp.row(*self.bottom_menu_send_reset())
 
@@ -99,7 +104,7 @@ class Vacancy:
                 return text2
 
             if not self.info:
-                text = self.help('start').format(name=self.user_name) + '\n'
+                text = self.help('start').format(name=self.user_name)
             text += self.help()
             text += self.feature_text()
             # print(self.vacancy_title())
@@ -180,12 +185,12 @@ class Vacancy:
         schedule: MenuItem = self.menu
         if schedule.cb_tag == 'schedule':
             for k, v in schedule.children.items():
-                print(k)
                 if schedule.children[k].text.find("✅") == -1:
                     starts_with = 0
                 else:
                     starts_with = 1
-                if self.info.get(k, ''):
+
+                if self.info.get('schedule', '') == k:
                     schedule.children[k].text = "✅" + schedule.children[k].text[starts_with:]
                 else:
                     schedule.children[k].text = schedule.children[k].text[starts_with:]
@@ -217,7 +222,7 @@ class Vacancy:
             help_text = markup_text.help_text.get(cb_tag, '')
 
         if help_text:
-            result = '=====Сообщение с помощью=====\n' if cb_tag != 'start' else ''
+            result = '\n=====Сообщение с помощью=====\n' if cb_tag != 'start' else ''
             result += help_text
             return result + '\n'
 
@@ -319,7 +324,8 @@ class Vacancy:
             platform = f'{platform}'
         result = ''
         if name or platform:
-            result = '🕹 ' + name + " " + platform + '\n'
+            name = f' {name} ' if name else ''
+            result = '🕹' + name + platform + '\n'
 
         return result
 
@@ -501,7 +507,7 @@ class MenuItem:
         return MP_WIDTH.get(self.cb_tag, MP_WIDTH['all'])
 
     def menu_action(self, MENU_ACTIONS: dict = MENU_ACTIONS):
-        if self.cb_tag in MENU_ACTIONS['nothing_exceptions']:
+        if self.cb_tag in MENU_ACTIONS['nothing_exceptions'].split(', '):
             return 'nothing'
         else:
             return MENU_ACTIONS.get(self.cb_tag, MENU_ACTIONS['all'])

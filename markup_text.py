@@ -27,7 +27,7 @@ USER_MENU = OrderedDict(
      "contacts": ("📨 Контакты", {"vacancy_link": "🌐 Vacancy link"}),
 
      "pre_send_vacancy": ("✅ Опубликовать", {"send_verif": "✅ Опубликовать"}),
-     "pre_reset_vacancy": ("❌ Сброс", {"reset_verif": "✅ Опубликовать"})
+     "pre_reset_vacancy": ("❌ Сброс", {"reset_verif": "❌ Сброс"})
 
      # {"callback_tag": ("menu_text",
      #                  {'submenu_tag': ("submenu_text",
@@ -37,9 +37,8 @@ USER_MENU = OrderedDict(
 # text, auto_input, inline_input
 MENU_ACTIONS = {
     f"all": "text",
-    'nothing_exceptions': "root, Intern, location, Remote, experience, junior, senior, middle, Full-Time, "
-                          "Part-Time, Contract schedule Relocate",
-    "not_clear": "payment pre_send_vacancy pre_reset_vacancy"
+    'nothing_exceptions': "pre_reset_vacancy, root, pre_send_vacancy, Intern, location, Remote, experience, junior, senior, middle, Full-Time, Part-Time, Contract, schedule, Relocate",
+    "not_clear": "payment, root, pre_send_vacancy, schedule, pre_reset_vacancy, send_verif, reset_verif"
 }
 
 MP_WIDTH = {

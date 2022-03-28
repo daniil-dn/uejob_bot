@@ -5,16 +5,15 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils.exceptions import MessageNotModified
 from contextlib import suppress
-from aiogram.dispatcher.webhook import SendMessage
 from aiogram.utils.executor import start_webhook
 
 from mytoken import TOKEN as API_TOKEN
-from Vacancy import vacancy_per_user, Vacancy, types, MENU_ACTIONS
+from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
 
-WEBHOOK_HOST = 'https://5cf7-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = 'https://89b3-178-178-81-86.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -51,7 +50,7 @@ async def delete_prev_messages(current_message_id, chat_id, count_to_delete=2):
             break
         try:
             await bot.delete_message(chat_id=chat_id, message_id=counter)
-        except:
+        except Exception as err:
             print('No message to dlt')
             continue
         finally:
@@ -286,7 +285,7 @@ async def send_verif(cb):
 
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             try:
-                text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send = True)
+                text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
                 await menu_return(cb.message)
                 await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html")
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
@@ -301,6 +300,7 @@ async def send_verif(cb):
         except Exception as err:
             print(err)
 
+
 @dp.callback_query_handler(
     lambda call: call.data in ("reset_verif"))
 async def reset_verif(cb):
@@ -311,12 +311,10 @@ async def reset_verif(cb):
         cur_vacancy = vacancy_per_user.get(chat_id, None)
 
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
-            cur_vacancy.info['payment'] = "По договоренности"
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
-                await menu_return(cb.message)
-                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
-                                                    reply_markup=cur_vacancy.get_mp)
+                await new_vacancy(cb.message)
+
             except Exception as err:
                 print(err)
         else:
@@ -325,6 +323,7 @@ async def reset_verif(cb):
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
             print(err)
+
 
 @dp.callback_query_handler(
     lambda call: call.data in ("Negotiable"))
@@ -350,6 +349,7 @@ async def pay(cb):
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
             print(err)
+
 
 # Меню заполнения вакансии
 # проверка cb на тег меню
