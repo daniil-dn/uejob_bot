@@ -54,12 +54,11 @@ class Vacancy:
 
         if not self.menu.cb_tag in MENU_ACTIONS['nothing_exceptions'] and not self.menu.cb_tag in MENU_ACTIONS[
             'not_clear']:
-            mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
-            if self.menu.cb_tag == "project":
-                mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
-            return mp
-
+            # mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
             mp.add(types.InlineKeyboardButton(f"Очистить поле", callback_data=f'clear_{self.menu.cb_tag}'))
+        if self.menu.cb_tag == "project" and self.info['project'] != 'Unknown':
+            mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
+
         return mp
 
     async def update_vacancy_text(self, chat_id, bot: Bot):
@@ -97,8 +96,9 @@ class Vacancy:
                 print(err)
 
     async def update_code_art(self, text: str):
-        code_list = "developer, разработчик, programmer, программист, dev".split(', ')
-        art_list = "artist, художник, animator, art".split(', ')
+        text = text.lower()
+        code_list = "developer, разработчик, programmer, программист, dev, ENGINEER".lower().split(', ')
+        art_list = "artist, художник, animator, art, Designer".lower().split(', ')
         self.is_code = False
         self.is_art = False
 
@@ -329,7 +329,7 @@ class Vacancy:
 
     def description(self):
         desc = self.info.get('description', '')
-        return f'🦄 {desc} \n\n' if desc else ''
+        return f'🦄 <b>Описание</b>\n{desc} \n\n' if desc else ''
 
     def duty(self):
         duty = self.info.get('duty', '')
@@ -354,7 +354,7 @@ class Vacancy:
     def contacts(self):
         contacts = self.info.get('contacts', '')
 
-        return f'<b>📨 Контакты</b>\n{contacts}\nVacancy here 👌' if contacts else ''
+        return f'<b>📨 Контакты</b>\n{contacts}\n🌐 Vacancy link' if contacts else ''
 
     @staticmethod
     def to_bullet(text: str, splitter: str = '='):
