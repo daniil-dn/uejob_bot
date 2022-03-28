@@ -10,10 +10,11 @@ from aiogram.utils.executor import start_webhook
 
 from mytoken import TOKEN as API_TOKEN
 from Vacancy import vacancy_per_user, Vacancy, types, MENU_ACTIONS
+from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
 
-WEBHOOK_HOST = 'https://2879-178-176-230-227.ngrok.io'
+WEBHOOK_HOST = 'https://5cf7-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -87,8 +88,6 @@ async def start(message: types.Message):
         :return: None
         """
         chat_id, mg_id = chat_message_id(message)
-        await bot.send_message(chat_id, text=f"Hello, {message.from_user.full_name}",
-                               reply_markup=types.ReplyKeyboardRemove())
 
         await new_vacancy(message)
 
@@ -108,14 +107,14 @@ async def new_vacancy(message: types.Message):
         await clear_markup(mg_id, chat_id)
 
         # Работаем с этим сообщением
-        main_mg = await bot.send_message(chat_id, 'Начинай заполнять вакансию')
-        cur_vacancy = Vacancy(main_mg.message_id, chat_id)
+        mg = await bot.send_message(chat_id,
+                                    text=help_text['start'].format(name=message.chat.first_name))
+        cur_vacancy = Vacancy(mg.message_id, chat_id, user_name=message.chat.first_name)
 
         vacancy_per_user[chat_id] = cur_vacancy
         await cur_vacancy.update_vacancy_text(chat_id, bot)
 
         mp = cur_vacancy.get_mp
-        await cur_vacancy.update_vacancy_text(chat_id, bot)
         await bot.edit_message_reply_markup(chat_id, cur_vacancy.mg_id, reply_markup=mp)
         return cur_vacancy
 
@@ -131,9 +130,6 @@ async def text_handler(message: types.Message):
             action = cur_vacancy.menu.menu_action()
 
             if action == 'text':
-                if message.text.lower() == 'clear' or message.text == '/clear':
-                    cur_vacancy.info[cur_vacancy.menu.cb_tag] = None
-                    await menu_return(message)
                 cur_vacancy.info[cur_vacancy.menu.cb_tag] = message.text
                 await cur_vacancy.update_code_art(message.text)
                 await cur_vacancy.update_vacancy_text(message.chat.id, bot)
@@ -171,6 +167,7 @@ async def menu_return(cb):
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
             print(err)
+            print('back')
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('clear_'))
@@ -179,11 +176,13 @@ async def clear_field(cb):
     cur_vacancy = vacancy_per_user.get(chat_id, None)
 
     if cur_vacancy:
-        if not cur_vacancy.info[cur_vacancy.menu.cb_tag] == 'Unknown' and cur_vacancy.menu.cb_tag =='project':
+        if 'project' in cb.data:
             cur_vacancy.info[cur_vacancy.menu.cb_tag] = 'Unknown'
         else:
-            cur_vacancy.info[cur_vacancy.menu.cb_tag] = None
-
+            try:
+                del cur_vacancy.info[cur_vacancy.menu.cb_tag]
+            except Exception as err:
+                print(err)
 
         await cur_vacancy.update_vacancy_text(cb.message.chat.id, bot)
         await menu_return(cb.message)
@@ -195,15 +194,19 @@ async def jun_mid_sen(cb):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
 
-
         cur_vacancy = vacancy_per_user.get(chat_id, None)
 
-
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
-            cur_vacancy.info['jun_mid_sen'] = cb.data
+            if cur_vacancy.info.get(cb.data, None):
+                cur_vacancy.info[cb.data] = None
+            else:
+                cur_vacancy.info[cb.data] = cb.data
+
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
-                await menu_return(cb.message)
+                # await menu_return(cb.message)\
+                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                    reply_markup=cur_vacancy.get_mp)
             except Exception as err:
                 print(err)
         else:
@@ -273,6 +276,57 @@ async def schedule(cb):
 
 
 @dp.callback_query_handler(
+    lambda call: call.data in ("send_verif"))
+async def send_verif(cb):
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
+        chat_id, cb_mg_id = chat_message_id(cb)
+
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
+
+        if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
+            try:
+                text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send = True)
+                await menu_return(cb.message)
+                await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html")
+                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                    reply_markup=cur_vacancy.get_mp)
+
+            except Exception as err:
+                print(err)
+        else:
+            await new_vacancy(cb.message)
+        try:
+            await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
+        except Exception as err:
+            print(err)
+
+@dp.callback_query_handler(
+    lambda call: call.data in ("reset_verif"))
+async def reset_verif(cb):
+    with suppress(MessageNotModified):
+        # для удобной работы с данными сообщения
+        chat_id, cb_mg_id = chat_message_id(cb)
+
+        cur_vacancy = vacancy_per_user.get(chat_id, None)
+
+        if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
+            cur_vacancy.info['payment'] = "По договоренности"
+            try:
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                await menu_return(cb.message)
+                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                    reply_markup=cur_vacancy.get_mp)
+            except Exception as err:
+                print(err)
+        else:
+            await new_vacancy(cb.message)
+        try:
+            await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
+        except Exception as err:
+            print(err)
+
+@dp.callback_query_handler(
     lambda call: call.data in ("Negotiable"))
 async def pay(cb):
     with suppress(MessageNotModified):
@@ -296,7 +350,6 @@ async def pay(cb):
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
             print(err)
-
 
 # Меню заполнения вакансии
 # проверка cb на тег меню

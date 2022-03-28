@@ -1,6 +1,10 @@
 from collections import OrderedDict
+from typing import Tuple
 
 from aiogram import types, Bot
+from aiogram.types import InlineKeyboardButton
+
+import markup_text
 from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH
 
 vacancy_per_user = {}
@@ -8,7 +12,7 @@ vacancy_per_user = {}
 
 class Vacancy:
 
-    def __init__(self, main_mg_id, chat_id):
+    def __init__(self, main_mg_id, chat_id, user_name=''):
         """
         Создает new объект вакансии.
         Инициализирует Шаги из файлы markup_text.py
@@ -18,12 +22,9 @@ class Vacancy:
         """
         self.mg_id = main_mg_id
         self.chat_id = chat_id
+        self.user_name = user_name
 
         self.info = {}
-        self.info['payment'] = "По договоренности"
-        self.info['schedule'] = "Full-Time"
-        self.info['jun_mid_sen'] = 'Middle'
-        self.info['project'] = 'Unknown'
 
         self.is_art = None
         self.is_code = None
@@ -53,16 +54,18 @@ class Vacancy:
             mp.add(self.menu.back_button())
 
         if not self.menu.cb_tag in MENU_ACTIONS['nothing_exceptions'] and not self.menu.cb_tag in MENU_ACTIONS[
-            'not_clear']:
-            mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
-            if self.menu.cb_tag == "project":
-                mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
-            return mp
+            'not_clear'].split(','):
+            # mp.add(types.InlineKeyboardButton(f"👇👇{self.menu.text}👇👇", callback_data='None'))
+            mp.add(types.InlineKeyboardButton(f"Очистить поле", callback_data=f'clear_'))
+        if self.menu.cb_tag == "project" and self.info.get('project', '') != 'Unknown':
+            mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
 
-            mp.add(types.InlineKeyboardButton(f"Очистить поле", callback_data=f'clear_{self.menu.cb_tag}'))
+        # if self.menu.cb_tag == 'root':
+        #     mp.row(*self.bottom_menu_send_reset())
+
         return mp
 
-    async def update_vacancy_text(self, chat_id, bot: Bot):
+    async def update_vacancy_text(self, chat_id, bot: Bot, is_send=False):
         """
 
         :param chat_id:
@@ -73,32 +76,46 @@ class Vacancy:
         self.update_platform_checked_items()
         self.update_remote_checked_items()
         self.update_schedule_checked_items()
-        self.update_experince_checked_items()
-        if self.info:
-            text = self.tags() + '\n\n'
-            text += "<b>" + self.vacancy_title() + self.company() + "</b>" + '\n\n' \
-                    + self.project() + self.platform() + '\n' \
-                    + '🧠 ' + self.jun_mid_sen() + self.experience() + '\n' \
-                    + self.payment() \
-                    + self.schedule() \
-                    + self.location() \
-                    + self.description() \
-                    + self.duty() \
-                    + self.skills() \
-                    + self.add_skills() \
-                    + self.conditions() \
-                    + self.useful_info() \
-                    + self.contacts()
-            print(self.vacancy_title())
-            print(self.company())
+        self.update_experience_checked_items()
+        if self.info or True:
+            text = "Предпросмотр вашей вакансии.\n\n"
+            text2 = self.tags()
+            text2 += self.vacancy_title() \
+                     + self.project() \
+                     + self.jun_mid_sen() \
+                     + self.payment() \
+                     + self.schedule() \
+                     + self.location() \
+                     + self.description() \
+                     + self.duty() \
+                     + self.skills() \
+                     + self.add_skills() \
+                     + self.conditions() \
+                     + self.useful_info() \
+                     + self.contacts() \
+                     + self.vacancy_link()
+            text = text + text2
+            if is_send:
+                return text2
+
+            if not self.info:
+                text = self.help('start').format(name=self.user_name) + '\n'
+            text += self.help()
+            text += self.feature_text()
+            # print(self.vacancy_title())
+            # print(self.company())
             try:
-                await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
+                if self.menu.cb_tag == 'pre_send_vacancy':
+                    await bot.edit_message_text(text2, chat_id, self.mg_id, parse_mode="html")
+                else:
+                    await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
             except Exception as err:
                 print(err)
 
     async def update_code_art(self, text: str):
-        code_list = "developer, разработчик, programmer, программист, dev".split(', ')
-        art_list = "artist, художник, animator, art".split(', ')
+        text = text.lower()
+        code_list = "developer, разработчик, programmer, программист, dev, ENGINEER".lower().split(', ')
+        art_list = "artist, художник, animator, art, Designer".lower().split(', ')
         self.is_code = False
         self.is_art = False
 
@@ -118,12 +135,12 @@ class Vacancy:
         print(root)
         for k, v in root.children.items():
             emo = USER_MENU[k][0] if type(USER_MENU[k]) is str else USER_MENU[k][0][0]
-            if self.info.get(k, '') or k == 'location' or k == 'sub_experince':
+            if self.info.get(k, '') or k == 'location' or k == 'experience':
                 if self.platform(is_tag=True) == '' and k == 'project':
                     root.children[k].text = emo + root.children[k].text[1:]
                 elif self.location(is_tag=True) == '' and k == 'location':
                     root.children[k].text = emo + root.children[k].text[1:]
-                elif self.jun_mid_sen(is_tag=True) == '' and k == 'sub_experince':
+                elif self.jun_mid_sen(is_tag=True) == '' and k == 'experience':
                     root.children[k].text = emo + root.children[k].text[1:]
                 else:
                     root.children[k].text = "✅" + root.children[k].text[1:]
@@ -173,30 +190,51 @@ class Vacancy:
                 else:
                     schedule.children[k].text = schedule.children[k].text[starts_with:]
 
-    def update_experince_checked_items(self):
-        schedule: MenuItem = self.menu
-        if schedule.cb_tag == 'sub_experince':
-            cur_jun_mid_sen = self.info.get('jun_mid_sen', '')
+    def update_experience_checked_items(self):
+        exp_menu: MenuItem = self.menu
+        if exp_menu.cb_tag == 'experience':
+            intern = self.info.get('Intern', None)
+            jun = self.info.get('Junior', None)
+            mid = self.info.get('Middle', None)
+            sen = self.info.get('Senior', None)
 
-            for k, v in self.menu.children.items():
-                if k in ('Intern', "Junior", "Middle", "Senior"):
-                    if self.menu.children[k].text.find("✅") == -1:
-                        starts_with = 0
-                    else:
-                        starts_with = 1
-                    if k == cur_jun_mid_sen:
-                        self.menu.children[k].text = "✅" + self.menu.children[k].text[starts_with:]
-                    else:
-                        self.menu.children[k].text = self.menu.children[k].text[starts_with:]
+            for k, v in exp_menu.children.items():
+                if exp_menu.children[k].text.find("✅") == -1:
+                    starts_with = 0
                 else:
-                    if self.menu.children[k].text.find("✅") == -1:
-                        starts_with = 0
-                    else:
-                        starts_with = 1
-                    if self.info.get(k, ''):
-                        self.menu.children[k].text = "✅" + self.menu.children[k].text[starts_with:]
-                    else:
-                        self.menu.children[k].text = self.menu.children[k].text[starts_with:]
+                    starts_with = 1
+
+                if self.info.get(k, '') and k.lower() in 'intern junior middle senior':
+                    exp_menu.children[k].text = "✅" + exp_menu.children[k].text[starts_with:]
+                else:
+                    exp_menu.children[k].text = exp_menu.children[k].text[starts_with:]
+
+    def help(self, cb_tag=None):
+        cb_tag = self.menu.cb_tag if not cb_tag else cb_tag
+        if not cb_tag == 'root':
+            help_text = markup_text.help_text.get(cb_tag, markup_text.help_text['all_sub_menu'])
+        else:
+            help_text = markup_text.help_text.get(cb_tag, '')
+
+        if help_text:
+            result = '=====Сообщение с помощью=====\n' if cb_tag != 'start' else ''
+            result += help_text
+            return result + '\n'
+
+        return ''
+
+    def feature_text(self, cb_tag=None):
+        cb_tag = self.menu.cb_tag if not cb_tag else cb_tag
+        if not cb_tag == 'root':
+            feature_text = markup_text.help_text.get(cb_tag, markup_text.help_text['all_sub_menu'])
+        else:
+            feature_text = markup_text.help_text.get(cb_tag, '')
+
+        if feature_text:
+            result = '\n=====Сообщение с фичами=====\n'
+            result += feature_text
+            return result
+        return ''
 
     def tags(self):
         """
@@ -204,7 +242,7 @@ class Vacancy:
 
         :return:
         """
-        tags = "#UnrealEngine #GameDev "
+        tags = ''
         tags += self.schedule(is_tag=True)
         tags += self.art_code_tag()
 
@@ -214,7 +252,7 @@ class Vacancy:
         tags += self.location(is_tag=True)
         tags += self.company(is_tag=True)
 
-        return tags
+        return "#UnrealEngine #GameDev " + tags + '\n\n' if tags else ''
 
     def art_code_tag(self):
         result = ''
@@ -225,29 +263,43 @@ class Vacancy:
 
         return result
 
-    def jun_mid_sen(self, is_tag=False):
+    def jun_mid_sen(self, is_tag=False, is_title=False):
+        intern = self.info.get('Intern', '')
+        jun = self.info.get('Junior', '')
+        mid = self.info.get('Middle', '')
+        sen = self.info.get('Senior', '')
 
-        jun_mid_sen = self.info.get('jun_mid_sen', '')
-        match jun_mid_sen:
-            case "Intern":
-                self.info['years'] = None if not self.info.get('years', None) else self.info['years']
-            case "Junior":
-                self.info['years'] = 1 if not self.info.get('years', None) else self.info['years']
-            case "Middle":
-                self.info['years'] = 3 if not self.info.get('years', None) else self.info['years']
-            case "Senior":
-                self.info['years'] = 5 if not self.info.get('years', None) else self.info['years']
+        print(intern, jun, mid, sen)
 
         if is_tag:
-            return f"#{jun_mid_sen} " if jun_mid_sen else ''
+            pc = f'#{intern} ' if intern else ''
+            console = f'#{jun} ' if jun else ''
+            vr = f'#{mid} ' if mid else ''
+            mobile = f'#{sen} ' if sen else ''
+            result = pc + console + vr + mobile
+
         else:
-            return f"{jun_mid_sen} " if jun_mid_sen else ''
+            to_join = []
+            for i in (intern, jun, mid, sen):
+                if i:
+                    to_join.append(i)
+            result = '/'.join(to_join)
+            result = f'{result}'
+            result = "🧠 " + result + "\n" if result and not is_title else result
+
+        return result + " " if result else ''
 
     def vacancy_title(self):
         title = self.info.get('vacancy', '')
-        title = title.lower().replace('ue5', '').replace('ue4', '').replace('ue', '').replace('unreal engine', '')
-        result = self.jun_mid_sen() + "UNREAL ENGINE " + title
-        return result.upper() + ' ' if title else result.upper()
+        title = title.lower().replace('ue5 ', '').replace('ue4 ', '').replace('ue ', '').replace('unreal engine', '')
+        title = title.lower().replace(' ue5', '').replace(' ue4', '').replace(' ue', '').replace('unreal engine', '')
+
+        if title:
+            title = "UNREAL ENGINE " + title
+        result = self.jun_mid_sen(is_title=True).upper() + title
+        result = result.upper() + ' ' if title else result.upper()
+        company = self.company()
+        return "<b>" + result + company + "</b>" + '\n\n' if result or company else ''
 
     def company(self, is_tag=False):
         company = self.info.get('company', '')
@@ -261,8 +313,15 @@ class Vacancy:
         return ''
 
     def project(self):
-        name = self.info.get('project', 'Unknown')
-        return '🕹 ' + name.capitalize() + ' '
+        name = self.info.get('project', '').capitalize()
+        platform = self.platform()
+        if platform:
+            platform = f'{platform}'
+        result = ''
+        if name or platform:
+            result = '🕹 ' + name + " " + platform + '\n'
+
+        return result
 
     def platform(self, is_tag=False):
         pc = self.info.get('PC', None)
@@ -283,7 +342,7 @@ class Vacancy:
                 if i:
                     to_join.append(i)
             result = ', '.join(to_join)
-            result = f'({result})'
+            result = f'({result})' if result else ""
 
         return result
 
@@ -301,7 +360,8 @@ class Vacancy:
             return ''
 
     def payment(self):
-        return f"💰 {self.info.get('payment', '')}\n"
+        result = self.info.get('payment', '')
+        return f"💰 {result}\n" if result else ""
 
     def location(self, is_tag=False):
         remote = self.info.get('Remote', None)
@@ -313,7 +373,7 @@ class Vacancy:
             result = remote + office
         else:
             remote = f'🌎 Удаленно' if remote else ''
-            office = f'👔 Офис ({office})' if office else ''
+            office = f'👔 Офис ({office.title()})' if office else ''
 
             if remote and office:
                 result = f"{remote} || {office}"
@@ -322,14 +382,16 @@ class Vacancy:
 
             if self.info.get('Relocate', ""):
                 result += " <b>Relocate</b>\n\n"
-            else:
+            elif remote or office:
                 result += "\n\n"
+            else:
+                result += "\n"
 
         return result
 
     def description(self):
         desc = self.info.get('description', '')
-        return f'🦄 {desc} \n\n' if desc else ''
+        return f'🦄 <b>Описание</b>\n{desc} \n\n' if desc else ''
 
     def duty(self):
         duty = self.info.get('duty', '')
@@ -354,7 +416,14 @@ class Vacancy:
     def contacts(self):
         contacts = self.info.get('contacts', '')
 
-        return f'<b>📨 Контакты</b>\n{contacts}\nVacancy here 👌' if contacts else ''
+        return f'<b>📨 Контакты</b>\n{contacts}\n' if contacts else ''
+
+    def vacancy_link(self):
+        link = self.info.get('vacancy_link', None)
+        if link:
+            return f"\n<a href='{self.info['vacancy_link']}'>🌐 Vacancy link</a>\n"
+        else:
+            return ''
 
     @staticmethod
     def to_bullet(text: str, splitter: str = '='):
@@ -399,6 +468,13 @@ class Vacancy:
             item = types.InlineKeyboardButton(text, callback_data=cb)
             mp.add(item)
         return mp
+
+    def bottom_menu_send_reset(self) -> tuple[InlineKeyboardButton, InlineKeyboardButton]:
+        # self.bottom_menu = self.render_menu(BOTTOM_menu)
+        # send_button = types.InlineKeyboardButton(BOTTOM_menu['send_vacancy'], callback_data='send_vacancy')
+        # reset_button = types.InlineKeyboardButton(BOTTOM_menu['reset_vacancy'], callback_data='reset_vacancy')
+        # return (send_button, reset_button)
+        pass
 
 
 class MenuItem:
