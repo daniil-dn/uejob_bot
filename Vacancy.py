@@ -290,7 +290,7 @@ class Vacancy:
                     to_join.append(i)
             result = '/'.join(to_join)
             result = f'{result}'
-            result = "🧠 " + result + "\n" if result and not is_title else result + " "
+            result = "🧠 " + result + "\n" if result and not is_title else result
 
         return result if result else ''
 
@@ -301,10 +301,18 @@ class Vacancy:
 
         if title:
             title = "UNREAL ENGINE " + title
-        result = self.jun_mid_sen(is_title=True).upper() + title
-        result = result.upper() + ' ' if title else result.upper()
+
+        exp = self.jun_mid_sen(is_title=True).upper()
+        if exp:
+            exp += ' '
+
+        result = exp + title
+        result = result.upper()
+
         company = self.company()
-        return "<b>" + result + company + "</b>" + '\n\n' if result or company else ''
+        if company:
+            result += f' {company}'
+        return "<b>" + result + "</b>" + '\n\n' if title else ''
 
     def company(self, is_tag=False):
         company = self.info.get('company', '')
