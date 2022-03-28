@@ -290,9 +290,9 @@ class Vacancy:
                     to_join.append(i)
             result = '/'.join(to_join)
             result = f'{result}'
-            result = "🧠 " + result + "\n" if result and not is_title else result
+            result = "🧠 " + result + "\n" if result and not is_title else result + " "
 
-        return result + " " if result else ''
+        return result if result else ''
 
     def vacancy_title(self):
         title = self.info.get('vacancy', '')
