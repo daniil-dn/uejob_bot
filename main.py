@@ -12,20 +12,19 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
-
-WEBHOOK_HOST = 'https://51.250.25.255'
+WEBHOOK_HOST = '51.250.25.255'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 80
+WEBAPP_HOST = '10.129.0.20'
+WEBAPP_PORT = 3001
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
-
+dp.Up
 
 def chat_message_id(message: types.Message) -> tuple:
     """
