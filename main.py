@@ -12,12 +12,12 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = 'https://7636-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = '51.250.25.255'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 4443
+WEBAPP_HOST = '10.129.0.20'
+WEBAPP_PORT = 443
 
 logging.basicConfig(level=logging.INFO)
 
