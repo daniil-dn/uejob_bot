@@ -13,12 +13,12 @@ from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
 
-WEBHOOK_HOST = 'https://3c98-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = 'https://51.250.25.255'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 4443
+WEBAPP_PORT = 80
 
 logging.basicConfig(level=logging.INFO)
 
