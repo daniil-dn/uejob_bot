@@ -12,7 +12,7 @@ app = Flask(__name__)
 @app.route('/<path:path>')
 def get_updates_from_webhook(path):
     print(path)
-    return requests.post('https://localhost:8080/?user_id=USER_ID', data={})
+    return requests.post('https://localhost:8080/', data={})
 
 
 if __name__ == '__main__':
