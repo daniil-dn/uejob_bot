@@ -12,8 +12,8 @@ app = Flask(__name__)
 @app.route('/<path:path>')
 def get_updates_from_webhook(path):
     print(path)
-    return requests.post('https://localhost:8080/', data={})
+    return redirect('localhost:4443')
 
 
 if __name__ == '__main__':
-  app.run(host='10.129.0.20', port=4400)
+    app.run(host='10.129.0.20', port=4400)

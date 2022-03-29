@@ -17,7 +17,7 @@ WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 8080
+WEBAPP_PORT = 4443
 
 logging.basicConfig(level=logging.INFO)
 
