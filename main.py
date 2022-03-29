@@ -12,19 +12,19 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = '51.250.25.255'
+WEBHOOK_HOST = 'https://51.250.25.255'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-WEBAPP_HOST = '10.129.0.20'
-WEBAPP_PORT = 3001
+WEBAPP_HOST = 'localhost'
+WEBAPP_PORT = 4443
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
-dp.Up
+
 
 def chat_message_id(message: types.Message) -> tuple:
     """
@@ -398,6 +398,18 @@ async def on_shutdown(dp):
     await dp.storage.wait_closed()
 
     logging.warning('Bye!')
+
+
+from flask import *
+
+app = Flask(__name__)
+
+@app.route('/', methods=['POST'])
+def get_updates_from_webhook():
+    print(request.stream.read().decode('utf-8'))
+    # update = aiogram.types.Update.to_object(request.stream.read().decode('utf-8'))
+    # dp.process_updates([update])
+    return 'ok', 200
 
 
 if __name__ == '__main__':
