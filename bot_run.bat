@@ -1,8 +1,6 @@
 #echo off
 
-call %~dp0vacancy_bot_parser/env/bin/activate
-
-cd %~dp0vacancy_bot_parser
+call %~dp0env/bin/activate
 
 python main.py&
 
