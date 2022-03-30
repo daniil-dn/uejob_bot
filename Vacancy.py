@@ -410,7 +410,7 @@ class Vacancy:
 
     def description(self):
         desc = self.info.get('description', '')
-        return f'🦄 <b>Описание</b>\n{desc} \n\n' if desc else ''
+        return f'\n🦄 <b>Описание</b>\n{desc} \n\n' if desc else ''
 
     def duty(self):
         duty = self.info.get('duty', '')
