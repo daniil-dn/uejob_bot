@@ -458,7 +458,7 @@ class Vacancy:
         list_items = list(map(str.strip, list_items))
         for item in list_items:
             if item:
-                line = item.strip(';.‣•-= ')
+                line = item.strip(';.‣•-=— ')
                 line = line[0].upper() + line[1:]
                 result += '\n• ' + line
 
