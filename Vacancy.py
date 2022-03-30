@@ -71,7 +71,7 @@ class Vacancy:
         return mp
 
     async def update_vacancy_text(self, chat_id, bot: Bot, is_send=False):
-        cur_menu = f"\n\n{self.menu.text}" if self.menu.cb_tag != 'root' else ''
+        cur_menu = f"\n\nВы здесь: <i>{self.menu.text}</i>" if self.menu.cb_tag != 'root' else ''
         """
 
         :param chat_id:
