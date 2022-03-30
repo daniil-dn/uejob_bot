@@ -334,7 +334,7 @@ async def reset_verif(cb):
 
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             try:
-                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
                 await new_vacancy(cb.message)
 
             except Exception as err:
