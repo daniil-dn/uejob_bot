@@ -297,8 +297,12 @@ class Vacancy:
 
     def vacancy_title(self):
         title = self.info.get('vacancy', '')
-        title = title.lower().replace('ue5 ', '').replace('ue4 ', '').replace('ue ', '').replace('unreal engine', '')
-        title = title.lower().replace(' ue5', '').replace(' ue4', '').replace(' ue', '').replace('unreal engine', '')
+        title = title.lower().replace('ue5 ', '').replace('ue4 ', '').replace('ue ', '').replace('unreal engine',
+                                                                                                 '').replace('unreal ',
+                                                                                                             '')
+        title = title.lower().replace(' ue5', '').replace(' ue4', '').replace(' ue', '').replace('unreal engine',
+                                                                                                 '').replace('unreal',
+                                                                                                             '')
 
         if title:
             title = "UNREAL ENGINE " + title
