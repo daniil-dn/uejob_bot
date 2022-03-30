@@ -106,12 +106,17 @@ class Vacancy:
                 text += self.vacancy_link(is_preview=True)
 
             if not self.info and self.menu.cb_tag == 'root':
-                text = self.help('start').format(name=self.user_name)
+                help = self.help('start').format(name=self.user_name)
+                text += help
+                try:
+                    await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
+                    return
+                except Exception as err:
+                    print(err)
+                    return
 
-            # print(self.vacancy_title())
-            # print(self.company())
             try:
-                if self.menu.cb_tag == 'pre_send_vacancy' or is_send:
+                if self.menu.cb_tag == 'pre_send_vacancy' or is_send is True:
                     await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
                 else:
                     text += self.help() + cur_menu
@@ -237,8 +242,8 @@ class Vacancy:
 
         if help_text:
             result = '\n=====Сообщение с помощью=====\n' if cb_tag != 'start' else ''
-            result += help_text if cb_tag != 'start' else ''
-            return result + '\n' if cb_tag != 'start' else ''
+            result += help_text
+            return result + '\n'
 
         return ''
 

@@ -12,7 +12,7 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = 'https://8366-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = 'https://32af-178-178-86-163.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -110,6 +110,7 @@ async def new_vacancy(message: types.Message):
         # Работаем с этим сообщением
         mg = await bot.send_message(chat_id,
                                     text=help_text['start'].format(name=message.chat.first_name))
+
         cur_vacancy = Vacancy(mg.message_id, chat_id, user_name=message.chat.first_name)
 
         vacancy_per_user[chat_id] = cur_vacancy
