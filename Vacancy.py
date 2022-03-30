@@ -141,11 +141,13 @@ class Vacancy:
         # print(root)
         if self.vacancy_link() == '':
             tag = 'vacancy_link'
-            emo = USER_MENU[tag][0] if type(USER_MENU[tag]) is str else USER_MENU[tag][0][0]
-            root.children[tag].text = root.children[tag].text = emo + root.children[tag].text[1:]
+            vacancy_link = root.children['contacts'].children[tag]
+            emo = '🌐'
+            vacancy_link.text = emo + root.children[tag].text[1:]
         else:
             tag = 'vacancy_link'
-            root.children[tag].text = "✅" + root.children[tag].text[1:]
+            vacancy_link = root.children['contacts'].children[tag]
+            vacancy_link.text = "✅" + vacancy_link.text[1:]
         for k, v in root.children.items():
             emo = USER_MENU[k][0] if type(USER_MENU[k]) is str else USER_MENU[k][0][0]
             if self.info.get(k, '') or k == 'location' or k == 'experience':
