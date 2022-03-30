@@ -74,3 +74,5 @@ help_text = {
 AFTER_SEND_MP = (('🔥Опубликовать новую вакансию🔥', '/new'), ('Вернуться в меню', "back_menu"))
 AFTER_SEND_ALERT = '📬Вакансия отправлена на модерацию!📬'
 
+ART_PATTERN = "artist, художник, animator, art, Designer, Generalist".lower().split(', ')
+CODE_PATTERN = "developer, разработчик, programmer, программист, dev, ENGINEER".lower().split(', ')

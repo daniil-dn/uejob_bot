@@ -5,7 +5,7 @@ from aiogram import types, Bot
 from aiogram.types import InlineKeyboardButton
 
 import markup_text
-from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH
+from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN
 
 vacancy_per_user = {}
 
@@ -121,8 +121,8 @@ class Vacancy:
 
     async def update_code_art(self, text: str):
         text = text.lower()
-        code_list = "developer, разработчик, programmer, программист, dev, ENGINEER".lower().split(', ')
-        art_list = "artist, художник, animator, art, Designer".lower().split(', ')
+        code_list = CODE_PATTERN
+        art_list = ART_PATTERN
         self.is_code = False
         self.is_art = False
 
@@ -237,8 +237,8 @@ class Vacancy:
 
         if help_text:
             result = '\n=====Сообщение с помощью=====\n' if cb_tag != 'start' else ''
-            result += help_text
-            return result + '\n'
+            result += help_text if cb_tag != 'start' else ''
+            return result + '\n' if cb_tag != 'start' else ''
 
         return ''
 
