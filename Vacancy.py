@@ -143,7 +143,7 @@ class Vacancy:
             tag = 'vacancy_link'
             vacancy_link = root.children['contacts'].children[tag]
             emo = '🌐'
-            vacancy_link.text = emo + root.children[tag].text[1:]
+            vacancy_link.text = emo + vacancy_link.text[1:]
         else:
             tag = 'vacancy_link'
             vacancy_link = root.children['contacts'].children[tag]
