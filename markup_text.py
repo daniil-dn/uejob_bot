@@ -48,26 +48,26 @@ MP_WIDTH = {
 }
 
 help_text = {
-    'all_sub_menu': 'afd',
+    'all_sub_menu': '',
 
     # start только в руте будет и когда нет данных
     'start': "Добро пожаловать, {name}! Бот поможет опубликовать вакансию на канале @uejobs. В этом сообщении вы увидите предпросмотр вашей вакансии, когда начнёте заполнять информацию\n",
 
-    # 'root': 'root',
-    'company': "company",
-    'vacancy': "vacancy",
-    'description': "description",
-    'project': "project",
-    'experience': "experience",
-    'schedule': "schedule",
+    # 'root': '',
+    'company': "",
+    'vacancy': "",
+    'description': "",
+    'project': "",
+    'experience': "",
+    'schedule': "",
     'payment': "Выберите \"По договоренности\" или введите свое значение",
-    'location': "location",
-    'duty': "duty",
-    'skills': "skills",
-    'add_skills': "add_skills",
-    'conditions': "conditions",
-    'useful_info': "useful_info",
-    'contacts': "contacts",
+    'location': "",
+    'duty': "",
+    'skills': "",
+    'add_skills': "",
+    'conditions': "",
+    'useful_info': "",
+    'contacts': "",
     'pre_reset_vacancy': "",
 
 }
