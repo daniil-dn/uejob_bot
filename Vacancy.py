@@ -111,7 +111,7 @@ class Vacancy:
             # print(self.vacancy_title())
             # print(self.company())
             try:
-                if self.menu.cb_tag == 'pre_send_vacancy':
+                if self.menu.cb_tag == 'pre_send_vacancy' or is_send:
                     await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
                 else:
                     text += self.help() + cur_menu
