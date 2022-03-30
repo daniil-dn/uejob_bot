@@ -48,7 +48,7 @@ class Vacancy:
                 cache.append(types.InlineKeyboardButton(next_menu.text, callback_data=tag))
             else:
                 cache_bottom.append(types.InlineKeyboardButton(next_menu.text, callback_data=tag))
-                print(tag)
+                # print(tag)
             counter += 1
             if counter % row_width == 0 or counter == len(self.menu.children):
                 mp.add(*cache)
@@ -56,7 +56,7 @@ class Vacancy:
         mp.row(*cache_bottom)
 
         if self.menu.cb_tag == "project" and self.info.get('project', '') != 'Unknown':
-            mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_{self.menu.cb_tag}'))
+            mp.add(types.InlineKeyboardButton(f"Unknown project", callback_data=f'clear_Unknown'))
         if not self.menu.cb_tag in MENU_ACTIONS['nothing_exceptions'].split(', ') and not self.menu.cb_tag in \
                                                                                           MENU_ACTIONS[
                                                                                               'not_clear'].split(', '):
@@ -83,36 +83,37 @@ class Vacancy:
         self.update_schedule_checked_items()
         self.update_experience_checked_items()
         if self.info or True:
-            text = "Предпросмотр вашей вакансии.\n\n"
-            text2 = self.tags()
-            text2 += self.vacancy_title() \
-                     + self.project() \
-                     + self.jun_mid_sen() \
-                     + self.payment() \
-                     + self.schedule() \
-                     + self.location() \
-                     + self.description() \
-                     + self.duty() \
-                     + self.skills() \
-                     + self.add_skills() \
-                     + self.conditions() \
-                     + self.useful_info() \
-                     + self.contacts() \
-                     + self.vacancy_link()
-            text = text + text2
+            text = self.tags()
+            text += self.vacancy_title() \
+                    + self.project() \
+                    + self.jun_mid_sen() \
+                    + self.payment() \
+                    + self.schedule() \
+                    + self.location() \
+                    + self.description() \
+                    + self.duty() \
+                    + self.skills() \
+                    + self.add_skills() \
+                    + self.conditions() \
+                    + self.useful_info() \
+                    + self.contacts()
+            # отправка в канал
             if is_send:
-                return text2
+                return text + self.vacancy_link(is_preview=False)
+            else:
+                text += self.vacancy_link(is_preview=True)
 
-            if not self.info:
+            if not self.info and self.menu.cb_tag == 'root':
                 text = self.help('start').format(name=self.user_name)
-            text += self.help()
-            text += self.feature_text()
+
             # print(self.vacancy_title())
             # print(self.company())
             try:
                 if self.menu.cb_tag == 'pre_send_vacancy':
-                    await bot.edit_message_text(text2, chat_id, self.mg_id, parse_mode="html")
+                    await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
                 else:
+                    text += self.help()
+                    text += self.feature_text()
                     await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
             except Exception as err:
                 print(err)
@@ -137,7 +138,7 @@ class Vacancy:
             root = root.parent if type(root.parent) is not str else root
             if root.parent == 'root':
                 break
-        print(root)
+        # print(root)
         for k, v in root.children.items():
             emo = USER_MENU[k][0] if type(USER_MENU[k]) is str else USER_MENU[k][0][0]
             if self.info.get(k, '') or k == 'location' or k == 'experience':
@@ -150,7 +151,7 @@ class Vacancy:
                 else:
                     root.children[k].text = "✅" + root.children[k].text[1:]
             else:
-                print(emo)
+                # print(emo)
                 root.children[k].text = emo + root.children[k].text[1:]
 
     def update_platform_checked_items(self):
@@ -171,7 +172,7 @@ class Vacancy:
         location: MenuItem = self.menu
         if location.cb_tag == 'location':
             for k, v in location.children.items():
-                print(k)
+                # print(k)
                 if location.children[k].text.find("✅") == -1:
                     starts_with = 0
                 else:
@@ -217,7 +218,7 @@ class Vacancy:
     def help(self, cb_tag=None):
         cb_tag = self.menu.cb_tag if not cb_tag else cb_tag
         if not cb_tag == 'root':
-            help_text = markup_text.help_text.get(cb_tag, markup_text.help_text['all_sub_menu'])
+            help_text = markup_text.help_text.get(cb_tag, markup_text.help_text.get('all_sub_menu', ''))
         else:
             help_text = markup_text.help_text.get(cb_tag, '')
 
@@ -231,9 +232,9 @@ class Vacancy:
     def feature_text(self, cb_tag=None):
         cb_tag = self.menu.cb_tag if not cb_tag else cb_tag
         if not cb_tag == 'root':
-            feature_text = markup_text.help_text.get(cb_tag, markup_text.help_text['all_sub_menu'])
+            feature_text = markup_text.feature_text.get(cb_tag, markup_text.feature_text.get('all_sub_menu', ''))
         else:
-            feature_text = markup_text.help_text.get(cb_tag, '')
+            feature_text = markup_text.feature_text.get(cb_tag, '')
 
         if feature_text:
             result = '\n=====Сообщение с фичами=====\n'
@@ -274,7 +275,7 @@ class Vacancy:
         mid = self.info.get('Middle', '')
         sen = self.info.get('Senior', '')
 
-        print(intern, jun, mid, sen)
+        # print(intern, jun, mid, sen)
 
         if is_tag:
             pc = f'#{intern} ' if intern else ''
@@ -395,7 +396,7 @@ class Vacancy:
                 result = remote + office
 
             if self.info.get('Relocate', ""):
-                result += " <b>Relocate</b>\n\n"
+                result += " Relocate\n\n"
             elif remote or office:
                 result += "\n\n"
             else:
@@ -425,16 +426,18 @@ class Vacancy:
 
     def useful_info(self):
         useful_info = self.info.get('useful_info', '')
-        return f'<b>ℹ️ Полезная информация</b>{self.to_bullet(useful_info)}\n\n' if useful_info else ''
+        return f'<b>ℹ️ Полезная информация</b>\n{useful_info}\n\n' if useful_info else ''
 
     def contacts(self):
         contacts = self.info.get('contacts', '')
 
         return f'<b>📨 Контакты</b>\n{contacts}\n' if contacts else ''
 
-    def vacancy_link(self):
+    def vacancy_link(self, is_preview=True):
         link = self.info.get('vacancy_link', None)
-        if link:
+        if link and is_preview:
+            return f"\n🌐 Vacancy link\n"
+        elif link:
             return f"\n<a href='{self.info['vacancy_link']}'>🌐 Vacancy link</a>\n"
         else:
             return ''

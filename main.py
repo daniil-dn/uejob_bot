@@ -9,15 +9,15 @@ from aiogram.utils.executor import start_webhook
 
 from mytoken import TOKEN as API_TOKEN
 from Vacancy import vacancy_per_user, Vacancy, types
-from markup_text import help_text, WHERE_SEND
+from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = '51.250.25.255'
+WEBHOOK_HOST = 'https://c8d0-83-149-44-246.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-WEBAPP_HOST = '10.129.0.20'
-WEBAPP_PORT = 443
+WEBAPP_HOST = 'localhost'
+WEBAPP_PORT = 4443
 
 logging.basicConfig(level=logging.INFO)
 
@@ -91,6 +91,7 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(commands=['new'])
+@dp.callback_query_handler(lambda call: call.data.startswith('/new'))
 async def new_vacancy(message: types.Message):
     """
     Создание новой вакансии
@@ -99,6 +100,8 @@ async def new_vacancy(message: types.Message):
     :param message:
     :return:
     """
+    if type(message) is types.CallbackQuery:
+        message = message.message
     with suppress(MessageNotModified):
         chat_id, mg_id = chat_message_id(message)
         # на всякий случай очищает клавиатуры последних 2 сообщений
@@ -128,11 +131,11 @@ async def text_handler(message: types.Message):
             action = cur_vacancy.menu.menu_action()
 
             if action == 'text':
-                cur_vacancy.info[cur_vacancy.menu.cb_tag] = message.text
+                cur_vacancy.info[cur_vacancy.menu.cb_tag] = message.text[0:1000]
+
                 await cur_vacancy.update_code_art(message.text)
                 await cur_vacancy.update_vacancy_text(message.chat.id, bot)
                 await menu_return(message)
-                print(cur_vacancy.info)
             # удаляет сообщение пользователя, когда не надо вводить ничего!
             await delete_prev_messages(message.message_id, message.chat.id, 1)
 
@@ -174,8 +177,21 @@ async def clear_field(cb):
     cur_vacancy = vacancy_per_user.get(chat_id, None)
 
     if cur_vacancy:
-        if 'project' in cb.data:
+        if 'Unknown' in cb.data:
             cur_vacancy.info[cur_vacancy.menu.cb_tag] = 'Unknown'
+        elif cur_vacancy.menu.cb_tag == 'project':
+            try:
+                del cur_vacancy.info[cur_vacancy.menu.cb_tag]
+                for i in ('PC', "Console", "VR/AR", "Mobile"):
+                    del cur_vacancy.info[i]
+            except Exception as err:
+                print(err)
+        elif cur_vacancy.menu.cb_tag == 'contacts':
+            try:
+                del cur_vacancy.info[cur_vacancy.menu.cb_tag]
+                del cur_vacancy.info['vacancy_link']
+            except Exception as err:
+                print(err)
         else:
             try:
                 del cur_vacancy.info[cur_vacancy.menu.cb_tag]
@@ -196,7 +212,7 @@ async def jun_mid_sen(cb):
 
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             if cur_vacancy.info.get(cb.data, None):
-                cur_vacancy.info[cb.data] = None
+                del cur_vacancy.info[cb.data]
             else:
                 cur_vacancy.info[cb.data] = cb.data
 
@@ -285,10 +301,13 @@ async def send_verif(cb):
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             try:
                 text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
-                await menu_return(cb.message)
                 await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html")
+                await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
+                                                text=AFTER_SEND_ALERT)
+
+                mp = cur_vacancy.mp_from_tuple(AFTER_SEND_MP)
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
-                                                    reply_markup=cur_vacancy.get_mp)
+                                                    reply_markup=mp)
 
             except Exception as err:
                 print(err)
@@ -362,6 +381,13 @@ async def callback4_all(cb):
         # Работаем только с актуальным сообщением
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             if cb.data in cur_vacancy.menu.children.keys():
+                if not cur_vacancy.info and cb.data in ("pre_reset_vacancy", "pre_send_vacancy"):
+                    try:
+                        await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id, text="Вакансия пуста")
+                        return
+                    except Exception as err:
+                        print(err)
+
                 cur_vacancy.menu = cur_vacancy.menu.children[cb.data]
                 await cur_vacancy.update_vacancy_text(cb.message.chat.id, bot)
                 mp = cur_vacancy.get_mp
@@ -398,18 +424,6 @@ async def on_shutdown(dp):
     await dp.storage.wait_closed()
 
     logging.warning('Bye!')
-
-
-from flask import *
-
-app = Flask(__name__)
-
-@app.route('/', methods=['POST'])
-def get_updates_from_webhook():
-    print(request.stream.read().decode('utf-8'))
-    # update = aiogram.types.Update.to_object(request.stream.read().decode('utf-8'))
-    # dp.process_updates([update])
-    return 'ok', 200
 
 
 if __name__ == '__main__':
