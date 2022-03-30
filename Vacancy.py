@@ -139,6 +139,13 @@ class Vacancy:
             if root.parent == 'root':
                 break
         # print(root)
+        if self.vacancy_link() == '':
+            tag = 'vacancy_link'
+            emo = USER_MENU[tag][0] if type(USER_MENU[tag]) is str else USER_MENU[tag][0][0]
+            root.children[tag].text = root.children[tag].text = emo + root.children[tag].text[1:]
+        else:
+            tag = 'vacancy_link'
+            root.children[tag].text = "✅" + root.children[tag].text[1:]
         for k, v in root.children.items():
             emo = USER_MENU[k][0] if type(USER_MENU[k]) is str else USER_MENU[k][0][0]
             if self.info.get(k, '') or k == 'location' or k == 'experience':
@@ -152,6 +159,7 @@ class Vacancy:
                     root.children[k].text = emo + root.children[k].text[1:]
                 else:
                     root.children[k].text = "✅" + root.children[k].text[1:]
+
             else:
                 # print(emo)
                 root.children[k].text = emo + root.children[k].text[1:]
