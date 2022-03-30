@@ -146,6 +146,8 @@ class Vacancy:
                     root.children[k].text = emo + root.children[k].text[1:]
                 elif self.location(is_tag=True) == '' and k == 'location':
                     root.children[k].text = emo + root.children[k].text[1:]
+                elif self.vacancy_link() == '' and k == 'vacancy_link':
+                    root.children[k].text = emo + root.children[k].text[1:]
                 elif self.jun_mid_sen(is_tag=True) == '' and k == 'experience':
                     root.children[k].text = emo + root.children[k].text[1:]
                 else:
