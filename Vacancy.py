@@ -404,7 +404,7 @@ class Vacancy:
             elif remote or office:
                 result += "\n\n"
             else:
-                result += "\n"
+                result += ""
 
         return result
 
@@ -434,7 +434,6 @@ class Vacancy:
 
     def contacts(self):
         contacts = self.info.get('contacts', '')
-
         return f'<b>📨 Контакты</b>\n{contacts}\n' if contacts else ''
 
     def vacancy_link(self, is_preview=True):
