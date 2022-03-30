@@ -71,6 +71,7 @@ class Vacancy:
         return mp
 
     async def update_vacancy_text(self, chat_id, bot: Bot, is_send=False):
+        cur_menu = f"\n\n{self.menu.text}" if self.menu.cb_tag != 'root' else ''
         """
 
         :param chat_id:
@@ -97,6 +98,7 @@ class Vacancy:
                     + self.conditions() \
                     + self.useful_info() \
                     + self.contacts()
+
             # отправка в канал
             if is_send:
                 return text + self.vacancy_link(is_preview=False)
@@ -112,8 +114,7 @@ class Vacancy:
                 if self.menu.cb_tag == 'pre_send_vacancy':
                     await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
                 else:
-                    text += self.help()
-                    text += self.feature_text()
+                    text += self.help() + cur_menu
                     await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
             except Exception as err:
                 print(err)
@@ -239,19 +240,6 @@ class Vacancy:
             result += help_text
             return result + '\n'
 
-        return ''
-
-    def feature_text(self, cb_tag=None):
-        cb_tag = self.menu.cb_tag if not cb_tag else cb_tag
-        if not cb_tag == 'root':
-            feature_text = markup_text.feature_text.get(cb_tag, markup_text.feature_text.get('all_sub_menu', ''))
-        else:
-            feature_text = markup_text.feature_text.get(cb_tag, '')
-
-        if feature_text:
-            result = '\n=====Сообщение с фичами=====\n'
-            result += feature_text
-            return result
         return ''
 
     def tags(self):

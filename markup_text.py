@@ -74,6 +74,3 @@ help_text = {
 AFTER_SEND_MP = (('🔥Опубликовать новую вакансию🔥', '/new'), ('Вернуться в меню', "back_menu"))
 AFTER_SEND_ALERT = '📬Вакансия отправлена на модерацию!📬'
 
-feature_text = {
-    'all_sub_menu': ''
-}
