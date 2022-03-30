@@ -189,10 +189,13 @@ async def clear_field(cb):
         elif cur_vacancy.menu.cb_tag == 'contacts':
             try:
                 del cur_vacancy.info[cur_vacancy.menu.cb_tag]
-                cur_vacancy.info['vacancy_link'] = None
-                del cur_vacancy.info['vacancy_link']
+
             except Exception as err:
-                print(err)
+                try:
+                    del cur_vacancy.info['vacancy_link']
+                except Exception as err:
+                    print(err)
+
         else:
             try:
                 del cur_vacancy.info[cur_vacancy.menu.cb_tag]
