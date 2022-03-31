@@ -48,6 +48,7 @@ MP_WIDTH = {
 }
 
 help_text = {
+    # сообщение по дефолту для каждого подменю
     'all_sub_menu': '',
 
     # start только в руте будет и когда нет данных
@@ -75,4 +76,4 @@ AFTER_SEND_MP = (('🔥Опубликовать новую вакансию🔥'
 AFTER_SEND_ALERT = '📬Вакансия отправлена на модерацию!📬'
 
 ART_PATTERN = "artist, художник, animator, art, Designer, Generalist".lower().split(', ')
-CODE_PATTERN = "developer, разработчик, programmer, программист, dev, ENGINEER".lower().split(', ')
+CODE_PATTERN = "developer, разработчик, programmer, программист, dev, ENGINEER, TECHNICAL".lower().split(', ')

@@ -12,7 +12,7 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = 'https://sdkdev.online'
+WEBHOOK_HOST = 'https://508a-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -182,9 +182,11 @@ async def clear_field(cb):
             cur_vacancy.info[cur_vacancy.menu.cb_tag] = 'Unknown'
         elif cur_vacancy.menu.cb_tag == 'project':
             try:
-                del cur_vacancy.info[cur_vacancy.menu.cb_tag]
+
                 for i in ('PC', "Console", "VR/AR", "Mobile"):
-                    del cur_vacancy.info[i]
+                    if cur_vacancy.info.get(i):
+                        del cur_vacancy.info[i]
+                del cur_vacancy.info[cur_vacancy.menu.cb_tag]
             except Exception as err:
                 print(err)
         elif cur_vacancy.menu.cb_tag == 'contacts':
@@ -306,7 +308,7 @@ async def send_verif(cb):
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             try:
                 text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
-                await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html")
+                await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html", disable_web_page_preview=True)
                 await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
                                                 text=AFTER_SEND_ALERT)
 

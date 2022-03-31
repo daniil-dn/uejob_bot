@@ -71,7 +71,7 @@ class Vacancy:
         return mp
 
     async def update_vacancy_text(self, chat_id, bot: Bot, is_send=False):
-        cur_menu = f"\n\nВы здесь: <i>{self.menu.text}</i>" if self.menu.cb_tag != 'root' else ''
+        cur_menu = f"<i>{self.menu.text}</i>" if self.menu.cb_tag != 'root' else ''
         """
 
         :param chat_id:
@@ -84,39 +84,68 @@ class Vacancy:
         self.update_schedule_checked_items()
         self.update_experience_checked_items()
         if self.info or True:
-            text = self.tags()
-            text += self.vacancy_title() \
-                    + self.project() \
-                    + self.jun_mid_sen() \
-                    + self.payment() \
-                    + self.schedule() \
-                    + self.location() \
-                    + self.description() \
-                    + self.duty() \
-                    + self.skills() \
-                    + self.add_skills() \
-                    + self.conditions() \
-                    + self.useful_info() \
-                    + self.contacts()
+            tags = self.tags()
+            text = self.vacancy_title() \
+                   + self.project() \
+                   + self.jun_mid_sen() \
+                   + self.payment() \
+                   + self.schedule() \
+                   + self.location() \
+                   + self.description() \
+                   + self.duty() \
+                   + self.skills() \
+                   + self.add_skills() \
+                   + self.conditions() \
+                   + self.useful_info() \
+                   + self.contacts()
 
             # отправка в канал
             if is_send:
-                return text + self.vacancy_link(is_preview=False)
-            else:
-                text += self.vacancy_link(is_preview=True)
-
-            if not self.info and self.menu.cb_tag == 'root':
-                help = self.help('start').format(name=self.user_name)
-                text += help
-                try:
-                    await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
-                    return
-                except Exception as err:
-                    print(err)
-                    return
-
+                return tags + text + self.vacancy_link(is_preview=False)
+            text += self.vacancy_link(is_preview=True)
             try:
-                if self.menu.cb_tag == 'pre_send_vacancy' or is_send is True:
+                # Если мы в руте и нет данных
+                if not self.info and self.menu.cb_tag == 'root':
+                    text += self.help('start').format(name=self.user_name)
+                    await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
+
+                elif self.menu.cb_tag == 'pre_send_vacancy' or is_send is True:
+                    await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
+                elif self.menu.parent != 'root':
+                    text = ''
+                    match self.menu.cb_tag.lower():
+                        case "company":
+                            text += '<b>' + self.company().strip('()') + '</b>'
+                        case "vacancy":
+                            text += self.vacancy_title()
+                        case "description":
+                            text += self.description()
+                        case "project":
+                            text += self.project()
+                        case "experience":
+                            text += self.jun_mid_sen()
+                        case "schedule":
+                            text += self.schedule()
+                        case "payment":
+                            text += self.payment()
+                        case "location" | 'office':
+                            text += self.location()
+                        case "duty":
+                            text += self.duty()
+                        case "skills":
+                            text += self.skills()
+                        case "add_skills":
+                            text += self.add_skills()
+                        case "conditions":
+                            text += self.conditions()
+                        case "useful_info":
+                            text += self.useful_info()
+                        case "contacts" | 'vacancy_link':
+                            text += self.contacts() + self.vacancy_link(is_preview=True)
+                    text = text.strip('/n')
+                    text += self.help()
+                    if text == '':
+                        text = cur_menu
                     await bot.edit_message_text(text, chat_id, self.mg_id, parse_mode="html")
                 else:
                     text += self.help() + cur_menu
@@ -305,12 +334,12 @@ class Vacancy:
         title = title.lower().replace('ue5 ', '').replace('ue4 ', '').replace('ue ', '').replace('unreal engine',
                                                                                                  '').replace('unreal ',
                                                                                                              '')
-        title = title.lower().replace(' ue5', '').replace(' ue4', '').replace(' ue', '').replace('unreal engine',
-                                                                                                 '').replace('unreal',
-                                                                                                             '')
+        title = title.replace(' ue5', '').replace(' ue4', '').replace(' ue', '').replace('unreal engine ',
+                                                                                         '').replace('unreal',
+                                                                                                     '')
 
         if title:
-            title = "UNREAL ENGINE " + title
+            title = "UNREAL ENGINE " + title.strip()
 
         exp = self.jun_mid_sen(is_title=True).upper()
         if exp:
@@ -322,7 +351,10 @@ class Vacancy:
         company = self.company()
         if company:
             result += f' {company}'
-        return "<b>" + result + "</b>" + '\n\n' if title else ''
+        add_indentation = ''
+        if self.project():
+            add_indentation = '\n'
+        return "<b>" + result + "</b>" + f'\n{add_indentation}' if title or company else ''
 
     def company(self, is_tag=False):
         company = self.info.get('company', '')
@@ -405,9 +437,9 @@ class Vacancy:
                 result = remote + office
 
             if self.info.get('Relocate', ""):
-                result += " Relocate\n\n"
+                result += " Relocate\n"
             elif remote or office:
-                result += "\n\n"
+                result += "\n"
             else:
                 result += ""
 
@@ -415,31 +447,31 @@ class Vacancy:
 
     def description(self):
         desc = self.info.get('description', '')
-        return f'\n🦄 <b>Описание</b>\n{desc} \n\n' if desc else ''
+        return f'\n🦄 <b>Описание</b>\n{desc}\n' if desc else ''
 
     def duty(self):
         duty = self.info.get('duty', '')
-        return f'<b>🚀 Что ты будешь делать</b>{self.to_bullet(duty)}\n\n' if duty else ''
+        return f'\n<b>🚀 Что ты будешь делать</b>{self.to_bullet(duty)}\n' if duty else ''
 
     def skills(self):
         skills = self.info.get('skills', '')
-        return f'<b>📚 Твои скиллы</b>{self.to_bullet(skills)}\n\n' if skills else ''
+        return f'\n<b>📚 Твои скиллы</b>{self.to_bullet(skills)}\n' if skills else ''
 
     def add_skills(self):
         add_skills = self.info.get('add_skills', '')
-        return f'<b>👍 Круто, если знаешь</b>{self.to_bullet(add_skills)}\n\n' if add_skills else ''
+        return f'\n<b>👍 Круто, если знаешь</b>{self.to_bullet(add_skills)}\n' if add_skills else ''
 
     def conditions(self):
         cond = self.info.get('conditions', '')
-        return f'<b>🍪 Условия и плюшки</b>{self.to_bullet(cond)}\n\n' if cond else ''
+        return f'\n<b>🍪 Условия и плюшки</b>{self.to_bullet(cond)}\n' if cond else ''
 
     def useful_info(self):
         useful_info = self.info.get('useful_info', '')
-        return f'<b>ℹ️ Полезная информация</b>\n{useful_info}\n\n' if useful_info else ''
+        return f'\n<b>ℹ️ Полезная информация</b>\n{useful_info}\n' if useful_info else ''
 
     def contacts(self):
         contacts = self.info.get('contacts', '')
-        return f'<b>📨 Контакты</b>\n{contacts}\n' if contacts else ''
+        return f'\n<b>📨 Контакты</b>\n{contacts}\n' if contacts else ''
 
     def vacancy_link(self, is_preview=True):
         link = self.info.get('vacancy_link', None)
