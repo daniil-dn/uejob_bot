@@ -1,11 +1,5 @@
 from collections import OrderedDict
 
-# отсюда создается STAGES при init в Vacancy
-# STAGES = {0:"vacancy_title"}
-"""
-'---' сопоставимо с None, Unknown...
-
-"""
 WHERE_SEND = '-621961119'
 
 USER_MENU = OrderedDict(
@@ -17,7 +11,7 @@ USER_MENU = OrderedDict(
          "🧠 Опыт",
          {"Intern": "Intern", "Junior": "Junior", "Middle": "Middle", "Senior": "Senior"}),
      "schedule": ("⏰ График", {'Full-Time': "Full-Time", 'Part-Time': "Part-Time", 'Contract': "Contract"}),
-     "payment": ("💰 Оплата", {"Negotiable": "По договоренности"}),
+     "payment": ("💰 Оплата", {"Negotiable": "По договорённости"}),
      "location": ("🗺 Локация", {'Remote': 'Remote', "Office": "Office", "Relocate": "Relocate"}),
      "duty": "🚀 Обязанности",
      "skills": "💪 Скилл сет",
@@ -52,23 +46,23 @@ help_text = {
     'all_sub_menu': '',
 
     # start только в руте будет и когда нет данных
-    'start': "Добро пожаловать, {name}! Бот поможет опубликовать вакансию на канале @uejobs. В этом сообщении вы увидите предпросмотр вашей вакансии, когда начнёте заполнять информацию\n",
+    'start': "Добро пожаловать, {name}! Бот поможет опубликовать вакансию на канале @uejobs. В этом сообщении вы увидите предпросмотр вашей вакансии, когда начнёте заполнять информацию",
 
     # 'root': '',
-    'company': "",
-    'vacancy': "",
-    'description': "",
-    'project': "",
-    'experience': "",
-    'schedule': "",
+    'company': "Enter Company Name",
+    'vacancy': "Enter Vacancy title",
+    'description': "Enter Description",
+    'project': "Enter the Name of your project",
+    'experience': "What candidate do you want",
+    'schedule': "How are you working?",
     'payment': "Выберите \"По договоренности\" или введите свое значение",
-    'location': "",
+    'location': "Where do you place?",
     'duty': "",
     'skills': "",
     'add_skills': "",
-    'conditions': "",
-    'useful_info': "",
-    'contacts': "",
+    'conditions': "What do you offer?",
+    'useful_info': "Do you have useful information?",
+    'contacts': "How contact you?",
     'pre_reset_vacancy': "",
 
 }

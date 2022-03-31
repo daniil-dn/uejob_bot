@@ -12,7 +12,7 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = 'https://752f-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = 'https://37d3-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -220,9 +220,10 @@ async def jun_mid_sen(cb):
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             if cur_vacancy.info.get(cb.data, None):
                 del cur_vacancy.info[cb.data]
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
             else:
                 cur_vacancy.info[cb.data] = cb.data
-
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
                 # await menu_return(cb.message)\
