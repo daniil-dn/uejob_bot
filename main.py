@@ -9,15 +9,13 @@ from aiogram.utils.executor import start_webhook
 
 from mytoken import TOKEN as API_TOKEN
 from Vacancy import vacancy_per_user, Vacancy, types
-from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT
+from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT, WEBHOOK_HOST, WEBAPP_HOST, WEBAPP_PORT
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = 'https://37d3-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 4443
+
 
 logging.basicConfig(level=logging.INFO)
 
