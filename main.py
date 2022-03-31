@@ -12,7 +12,7 @@ from Vacancy import vacancy_per_user, Vacancy, types
 from markup_text import help_text, WHERE_SEND, AFTER_SEND_MP, AFTER_SEND_ALERT
 
 # from testing.sqllighter3 import SQLighter
-WEBHOOK_HOST = 'https://508a-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = 'https://752f-51-250-25-255.ngrok.io'
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
