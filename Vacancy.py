@@ -173,10 +173,10 @@ class Vacancy:
         self.is_art = False
 
         for i in code_list:
-            if i in text:
+            if i.lower() in text:
                 self.is_code = True
         for i in art_list:
-            if i in text:
+            if i.lower() in text:
                 self.is_art = True
 
     def update_root_checked_items(self):
