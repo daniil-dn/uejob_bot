@@ -1,10 +1,5 @@
 from collections import OrderedDict
 
-WHERE_SEND = '-621961119'
-WEBHOOK_HOST = 'https://8090-51-250-25-255.ngrok.io'
-WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 4443
-
 USER_MENU = OrderedDict(
     {"company": "🏢 Компания",
      "vacancy": "🖥 Вакансия",
@@ -34,7 +29,8 @@ USER_MENU = OrderedDict(
 # text, auto_input, inline_input
 MENU_ACTIONS = {
     f"all": "text",
-    'nothing_exceptions': "pre_reset_vacancy, root, pre_send_vacancy, Intern, location, Remote, experience, junior, senior, middle, Full-Time, Part-Time, Contract, schedule, Relocate",
+    'nothing_exceptions': "pre_reset_vacancy, root, pre_send_vacancy, Intern, location, Remote, experience, junior, senior, "
+                          "middle, Full-Time, Part-Time, Contract, schedule, Relocate",
     "not_clear": "payment, root, pre_send_vacancy, schedule, pre_reset_vacancy, send_verif, reset_verif"
 }
 
