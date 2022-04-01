@@ -438,6 +438,7 @@ class Vacancy:
             remote = f'#Remote ' if remote else ''
             office = '#Office ' if office else ''
             result = remote + office
+            return result
         else:
             remote = f'🌎 Удаленно' if remote else ''
             office = f'👔 Офис ({office.title()})' if office else ''
