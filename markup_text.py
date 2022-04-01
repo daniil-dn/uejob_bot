@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 WHERE_SEND = '-621961119'
-WEBHOOK_HOST = 'https://6d04-51-250-25-255.ngrok.io'
+WEBHOOK_HOST = 'https://a4d3-51-250-25-255.ngrok.io'
 WEBAPP_HOST = 'localhost'
 WEBAPP_PORT = 4443
 
