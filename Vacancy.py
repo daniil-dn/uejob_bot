@@ -110,10 +110,10 @@ class Vacancy:
                 # Если мы в руте и нет данных
                 if not self.info and self.menu.cb_tag == 'root':
                     result += self.help('start').format(name=self.user_name)
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html")
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html", disable_web_page_preview=True)
 
                 elif self.menu.cb_tag == 'pre_send_vacancy' or is_send is True or self.menu.cb_tag == 'pre_reset_vacancy':
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html")
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html", disable_web_page_preview=True)
                 elif self.menu.parent != 'root':
                     text = ''
                     match self.menu.cb_tag.lower():
@@ -158,10 +158,10 @@ class Vacancy:
 
                     result = cur_menu + help + text
 
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html")
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",disable_web_page_preview=True)
                 else:
                     result += self.help() + cur_menu
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html")
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",disable_web_page_preview=True)
             except Exception as err:
                 print(err)
 
