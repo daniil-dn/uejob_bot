@@ -166,6 +166,8 @@ class Vacancy:
                 print(err)
 
     async def update_code_art(self, text: str):
+        if not self.menu.cb_tag == 'vacancy':
+            return
         text = text.lower()
         code_list = CODE_PATTERN
         art_list = ART_PATTERN
