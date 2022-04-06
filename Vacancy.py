@@ -5,7 +5,7 @@ from aiogram import types, Bot
 from aiogram.types import InlineKeyboardButton
 
 import markup_text
-from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN
+from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN
 
 vacancy_per_user = {}
 
@@ -500,7 +500,7 @@ class Vacancy:
         list_items = list(map(str.strip, list_items))
         for item in list_items:
             if item:
-                line = item.strip(';.‣•-=— ')
+                line = item.strip(CHAR_CLEAN)
                 line = line[0].upper() + line[1:]
                 result += '\n• ' + line
 
