@@ -500,9 +500,10 @@ class Vacancy:
         list_items = list(map(str.strip, list_items))
         for item in list_items:
             if item:
-                line = item.strip(CHAR_CLEAN).strip(' ')
-                line = line[0].upper() + line[1:]
-                result += '\n• ' + line
+                    line = item.strip(CHAR_CLEAN).strip(' ')
+                    if line:
+                        line = line[0].upper() + line[1:]
+                        result += '\n• ' + line
 
         return result
 
