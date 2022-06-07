@@ -5,7 +5,7 @@ from aiogram.types import InlineKeyboardButton
 
 from configs import markup_text
 from configs.markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN
-
+from cleantext import clean as clean_text
 vacancy_per_user = {}
 
 
@@ -524,6 +524,7 @@ class Vacancy:
 
     @staticmethod
     def to_bullet(text: str, splitter: str = '='):
+        text = clean_text(text, no_emoji=True, to_ascii=False)
         list_items = text.splitlines()
         result = ''
 
