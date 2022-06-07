@@ -107,8 +107,8 @@ async def new_vacancy(message: types.Message):
         # Работаем с этим сообщением
         mg = await bot.send_message(chat_id, disable_web_page_preview=True,
                                     text=help_text['start'].format(name=message.chat.first_name))
-
-        cur_vacancy = Vacancy(mg.message_id, chat_id, user_name=message.chat.first_name)
+        print(message.chat.first_name)
+        cur_vacancy = Vacancy(mg.message_id, chat_id, username=message.chat.username, name=message.chat.first_name)
 
         vacancy_per_user[chat_id] = cur_vacancy
         await cur_vacancy.update_vacancy_text(chat_id, bot)
@@ -306,7 +306,19 @@ async def send_verif(cb):
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             try:
                 text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
-                await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html", disable_web_page_preview=True)
+                text = f"from {cur_vacancy.name} @{cur_vacancy.username or cb.from_user.id} \n\n" + text
+                vacancy_link_button = None
+                if cur_vacancy.info.get('vacancy_link', None):
+                    vacancy_link_button = types.InlineKeyboardButton('🌐 Vacancy Link 🌐',
+                                                                     url=cur_vacancy.info['vacancy_link'])
+                    vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
+                try:
+                    draft_mg = await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
+                                                      disable_web_page_preview=True, reply_markup=vacancy_link_button)
+                except Exception:
+                    draft_mg = await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
+                                                      disable_web_page_preview=True)
+
                 await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
                                                 text=AFTER_SEND_ALERT)
 

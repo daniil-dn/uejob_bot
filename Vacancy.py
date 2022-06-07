@@ -11,7 +11,7 @@ vacancy_per_user = {}
 
 class Vacancy:
 
-    def __init__(self, main_mg_id, chat_id, user_name=''):
+    def __init__(self, main_mg_id, chat_id, username='', name=''):
         """
         Создает new объект вакансии.
         Инициализирует Шаги из файлы markup_text.py
@@ -21,7 +21,8 @@ class Vacancy:
         """
         self.mg_id = main_mg_id
         self.chat_id = chat_id
-        self.user_name = user_name
+        self.username = username
+        self.name = name
 
         self.info = {}
 
@@ -102,17 +103,23 @@ class Vacancy:
 
             # отправка в канал
             if is_send:
-                return tags + result + self.vacancy_link(is_preview=False)
+                send_res = result
+                if send_res and send_res[-1] == '\n':
+                    send_res = send_res[:-1]
+                return send_res + tags
+
             else:
                 result += self.vacancy_link(is_preview=True)
             try:
                 # Если мы в руте и нет данных
                 if not self.info and self.menu.cb_tag == 'root':
-                    result += self.help('start').format(name=self.user_name)
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html", disable_web_page_preview=True)
+                    result += self.help('start').format(name=self.name)
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                                disable_web_page_preview=True)
 
                 elif self.menu.cb_tag == 'pre_send_vacancy' or is_send is True or self.menu.cb_tag == 'pre_reset_vacancy':
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html", disable_web_page_preview=True)
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                                disable_web_page_preview=True)
                 elif self.menu.parent != 'root':
                     text = ''
                     match self.menu.cb_tag.lower():
@@ -157,10 +164,12 @@ class Vacancy:
 
                     result = cur_menu + help + text
 
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",disable_web_page_preview=True)
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                                disable_web_page_preview=True)
                 else:
                     result += self.help() + cur_menu
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",disable_web_page_preview=True)
+                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                                disable_web_page_preview=True)
             except Exception as err:
                 print(err)
 
@@ -196,9 +205,11 @@ class Vacancy:
             tag = 'vacancy_link'
             vacancy_link = root.children['contacts'].children[tag]
             vacancy_link.text = "✅" + vacancy_link.text[1:]
+
         for k, v in root.children.items():
             emo = USER_MENU[k][0] if type(USER_MENU[k]) is str else USER_MENU[k][0][0]
-            if self.info.get(k, '') or k == 'location' or k == 'experience':
+            if self.info.get(k, '') or k == 'location' or k == 'experience' or (
+                    k == 'contacts' and (self.info.get(k, '') or self.info.get('vacancy_link', ''))):
                 if self.platform(is_tag=True) == '' and k == 'project':
                     root.children[k].text = emo + root.children[k].text[1:]
                 elif self.location(is_tag=True) == '' and k == 'location':
@@ -207,6 +218,8 @@ class Vacancy:
                     root.children[k].text = emo + root.children[k].text[1:]
                 elif self.jun_mid_sen(is_tag=True) == '' and k == 'experience':
                     root.children[k].text = emo + root.children[k].text[1:]
+                elif (self.info.get(k, '') or self.info.get('vacancy_link', '')) and k == 'contacts':
+                    root.children[k].text = "✅" + root.children[k].text[1:]
                 else:
                     root.children[k].text = "✅" + root.children[k].text[1:]
 
@@ -305,7 +318,7 @@ class Vacancy:
         tags += self.location(is_tag=True)
         tags += self.company(is_tag=True)
 
-        return "#UnrealEngine #GameDev " + tags + '\n\n' if tags else ''
+        return '\n\n' + "#UnrealEngine #GameDev " + tags if tags else ''
 
     def art_code_tag(self):
         result = ''
@@ -352,7 +365,7 @@ class Vacancy:
                                                                                                      '')
 
         if title:
-            title = "UNREAL ENGINE " + title.strip()
+            title = title.strip()
 
         exp = self.jun_mid_sen(is_title=True).upper()
         if exp:
@@ -371,7 +384,7 @@ class Vacancy:
         company = self.info.get('company', '')
 
         if is_tag and company:
-            return f"#{company.title().replace(' ', '').replace('-', '')} "
+            return '#' + f"{company}".replace('-', '').replace('\'', '').title().replace(' ', '')
 
         if not is_tag and company:
             company = company.capitalize() if company and company[0].islower() else company
@@ -429,6 +442,18 @@ class Vacancy:
 
     def payment(self):
         result = self.info.get('payment', '')
+        result = result.replace('.', "")
+        result = result.replace('рублей', "₽")
+        result = result.replace('руб', "₽")
+        result = result.replace('р', "₽")
+        result = result.replace('rub', "₽")
+        result = result.replace('дол', "$")
+        result = result.replace('usd', "$")
+        result = result.replace('долларов', "$")
+        result = result.replace('евро', "€")
+        result = result.replace('euro', "€")
+        result = result.replace('eu', "€")
+
         return f"\n💰 {result}" if result else ""
 
     def location(self, is_tag=False):
@@ -487,7 +512,13 @@ class Vacancy:
         if link and is_preview:
             return f"\n\n🌐 Vacancy link"
         elif link:
-            return f"\n\n<a href='{self.info['vacancy_link']}'>🌐 Vacancy link</a>"
+
+            vacancy_link_button = types.InlineKeyboardButton('🌐 Vacancy Link 🌐',
+                                                             url=self.info['vacancy_link'])
+
+            vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
+            self.info['vacancy_link_button'] = vacancy_link_button
+            return ''
         else:
             return ''
 
@@ -499,10 +530,10 @@ class Vacancy:
         list_items = list(map(str.strip, list_items))
         for item in list_items:
             if item:
-                    line = item.strip(CHAR_CLEAN).strip(' ')
-                    if line:
-                        line = line[0].upper() + line[1:]
-                        result += '\n• ' + line
+                line = item.strip(CHAR_CLEAN).strip(' ')
+                if line:
+                    line = line[0].upper() + line[1:]
+                    result += '\n• ' + line
 
         return result
 
