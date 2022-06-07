@@ -107,7 +107,7 @@ async def new_vacancy(message: types.Message):
         # Работаем с этим сообщением
         mg = await bot.send_message(chat_id, disable_web_page_preview=True,
                                     text=help_text['start'].format(name=message.chat.first_name))
-        print(message.chat.first_name)
+      
         cur_vacancy = Vacancy(mg.message_id, chat_id, username=message.chat.username, name=message.chat.first_name)
 
         vacancy_per_user[chat_id] = cur_vacancy
