@@ -107,7 +107,7 @@ async def new_vacancy(message: types.Message):
         # Работаем с этим сообщением
         mg = await bot.send_message(chat_id, disable_web_page_preview=True,
                                     text=help_text['start'].format(name=message.chat.first_name))
-      
+
         cur_vacancy = Vacancy(mg.message_id, chat_id, username=message.chat.username, name=message.chat.first_name)
 
         vacancy_per_user[chat_id] = cur_vacancy
@@ -411,11 +411,12 @@ async def indie(cb):
         except Exception as err:
             print(err)
 
+
 @dp.callback_query_handler(
-    lambda call: (call.data == 'generalist' or (call.data.find('_') >= 0 and default_vacancy_name.find(call.data))))
+    lambda call: (
+            call.data == 'generalist' or (call.data.find('_') >= 0 and default_vacancy_name.find(call.data) >= 0)))
 async def vacancy_name(cb):
     with suppress(MessageNotModified):
-
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
 
@@ -423,13 +424,13 @@ async def vacancy_name(cb):
 
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             cur_vacancy.info['vacancy'] = cb.data
-            try:
-                await cur_vacancy.update_vacancy_text(chat_id, bot)
-                await menu_return(cb.message)
-                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
-                                                    reply_markup=cur_vacancy.get_mp)
-            except Exception as err:
-                print(err)
+        try:
+            await cur_vacancy.update_vacancy_text(chat_id, bot)
+            await menu_return(cb.message)
+            await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                reply_markup=cur_vacancy.get_mp)
+        except Exception as err:
+            print(err)
         else:
             await new_vacancy(cb.message)
         try:
@@ -451,12 +452,12 @@ async def callback4_all(cb):
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             if cb.data in cur_vacancy.menu.children.keys():
 
-
                 if (not cur_vacancy.info
                     or not cur_vacancy.info.get('company', None)
                     or not cur_vacancy.info.get('vacancy', None)
-                    or not cur_vacancy.location(is_tag = True)
-                    or (not cur_vacancy.contacts() and not cur_vacancy.info.get('vacancy_link', None))) and cb.data in ("pre_reset_vacancy", "pre_send_vacancy"):
+                    or not cur_vacancy.location(is_tag=True)
+                    or (not cur_vacancy.contacts() and not cur_vacancy.info.get('vacancy_link', None))) and cb.data in (
+                        "pre_reset_vacancy", "pre_send_vacancy"):
                     try:
                         await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
                                                         text='ПОЛЯ \n\n"🏢 Компания",\n"🖥 Вакансия",\n"🗺 Локация",\n"📨 Контакты"\n\nОБЯЗАТЕЛЬНЫ')
