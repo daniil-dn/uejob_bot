@@ -109,7 +109,7 @@ class Vacancy:
                 return send_res + tags
 
             else:
-                result += self.vacancy_link(is_preview=True)
+                result += self.vacancy_link(is_preview=False)
             try:
                 # Если мы в руте и нет данных
                 if not self.info and self.menu.cb_tag == 'root':
@@ -384,7 +384,7 @@ class Vacancy:
         company = self.info.get('company', '')
 
         if is_tag and company:
-            return '#' + f"{company}".replace('-', '').replace('\'', '').title().replace(' ', '')
+            return '#' + f"{company}".replace('-', '').replace('\'', '').title().replace(' ', '').replace('.', '')
 
         if not is_tag and company:
             company = company.capitalize() if company and company[0].islower() else company
@@ -518,7 +518,7 @@ class Vacancy:
 
             vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
             self.info['vacancy_link_button'] = vacancy_link_button
-            return ''
+            return f"\n\n<a href='{self.info['vacancy_link']}'>🌐 Vacancy link</a>"
         else:
             return ''
 
