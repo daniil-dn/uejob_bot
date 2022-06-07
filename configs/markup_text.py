@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 USER_MENU = OrderedDict(
     {"company": "🏢 Компания",
      "vacancy": "🖥 Вакансия",
@@ -70,4 +71,4 @@ AFTER_SEND_ALERT = '📬Вакансия отправлена на модера�
 
 ART_PATTERN = "artist, художник, animator, art, Designer, Generalist".lower().split(', ')
 CODE_PATTERN = "developer, разработчик, programmer, программист, dev, ENGINEER, TECHNICAL".lower().split(', ')
-CHAR_CLEAN  = ';.‣•-=—*· ●–⁃✔️◦ '
+CHAR_CLEAN  = ';.‣•-=—*· ●–⁃✔️◦ '

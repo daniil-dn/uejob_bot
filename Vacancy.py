@@ -1,11 +1,10 @@
 from collections import OrderedDict
-from typing import Tuple
 
 from aiogram import types, Bot
 from aiogram.types import InlineKeyboardButton
 
-import markup_text
-from markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN
+from configs import markup_text
+from configs.markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN
 
 vacancy_per_user = {}
 
