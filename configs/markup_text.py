@@ -1,9 +1,21 @@
 from collections import OrderedDict
 
-
 USER_MENU = OrderedDict(
-    {"company": "🏢 Компания",
-     "vacancy": "🖥 Вакансия",
+    {"company": ("🏢 Компания", {"indie": "Без названия"}),
+     "vacancy": ("🖥 Вакансия", {"generalist": "GENERALIST",
+                                 "developer": ("DEVELOPER", {"c++_developer": "C++ DEVELOPER",
+                                                             "multiplayer_developer": "MULTIPLAYER DEVELOPER",
+                                                             "ai_developer": "AI DEVELOPER",
+                                                             "gameplay_developer": "GAMEPLAY DEVELOPER"}),
+                                 "artist": ('ARTIST', {"3d_artist": "3D ARTIST", "technical_artist": "TECHNICAL ARTIST",
+                                                       "environmental_artist": "ENVIRONMENTAL ARTIST",
+                                                       "vfx_artist": "VFX ARTIST",
+                                                       "lightning_artist": "LIGHTING ARTIST"}),
+                                 "designer": (
+                                     'DESIGNER',
+                                     {"game_designer": "GAME DESIGNER", "motion_designer": "MOTION DESIGNER",
+                                      "level_designer": "LEVEL DESIGNER", "ui/ux_designer": "UI/UX DESIGNER"})
+                                 }),
      "description": "✍️ Описание",
      "project": ("🕹 Проект", {'PC': 'PC', "Console": 'Console', 'VR/AR': 'VR/AR', "Mobile": 'Mobile'}),
      "experience": (
@@ -28,17 +40,28 @@ USER_MENU = OrderedDict(
      #  }
      })
 # text, auto_input, inline_input
+default_vacancy_name = "generalist, c++_developer, multiplayer_developer, ai_developer,gameplay_developer," \
+                                 " 3d_artist,technical_artist, environmental_artist, vfx_artist, lighting_artistgame_designer," \
+                                 " motion_designer, level_designer, ui/ux_designer"
 MENU_ACTIONS = {
     f"all": "text",
-    'nothing_exceptions': "pre_reset_vacancy, root, pre_send_vacancy, Intern, location, Remote, experience, junior, senior, "
-                          "middle, Full-Time, Part-Time, Contract, schedule, Relocate",
+    'nothing_exceptions': "pre_reset_vacancy, root, pre_send_vacancy, Intern, location, Remote, experience, junior, "
+                          "senior, middle, Full-Time, Part-Time, Contract, schedule, Relocate, indie, generalist, "
+                          "c++_developer, multiplayer_developer, ai_developer,gameplay_developer, 3d_artist,"
+                          " technical_artist, environmental_artist, vfx_artist, lighting_artist"
+                          "game_designer, motion_designer, level_designer, ui/ux_designer",
+
     "not_clear": "payment, root, pre_send_vacancy, schedule, pre_reset_vacancy, send_verif, reset_verif"
 }
 
 MP_WIDTH = {
     "all": 3,
     "experience": 4,
-    "project": 4
+    "project": 4,
+    "vacancy": 2,
+    'designer': 2,
+    'developer': 2,
+    'artist': 2
 }
 
 help_text = {
@@ -71,4 +94,4 @@ AFTER_SEND_ALERT = '📬Вакансия отправлена на модера�
 
 ART_PATTERN = "artist, художник, animator, art, Designer, Generalist".lower().split(', ')
 CODE_PATTERN = "developer, разработчик, programmer, программист, dev, ENGINEER, TECHNICAL".lower().split(', ')
-CHAR_CLEAN  = ';.‣•-=—*· ●–⁃✔️◦ '
+CHAR_CLEAN = ';.‣•-=—*· ●–⁃✔️◦ '
