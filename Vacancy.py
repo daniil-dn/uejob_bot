@@ -459,7 +459,6 @@ class Vacancy:
                 for replace_it in replace_those:
                     regex = re.compile(rf'[\W]?{replace_it}[\W]+', re.I)
                     result = re.sub(regex, replace_with, result.lower())
-                    print(re.sub(regex, replace_with, result))
 
             elif type(replace_those) is str:
                 result = result.replace(replace_those, replace_with)
