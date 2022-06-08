@@ -9,7 +9,7 @@ from aiogram.utils.executor import start_webhook
 
 from configs.mytoken import TOKEN as API_TOKEN
 from Vacancy import vacancy_per_user, Vacancy, types
-from configs.markup_text import help_text, AFTER_SEND_MP, AFTER_SEND_ALERT, default_vacancy_name
+from configs.markup_text import help_text, AFTER_SEND_MP, AFTER_SEND_ALERT, default_vacancy_name, USE_LINK_BUTTON
 from configs.config import WEBHOOK_HOST, WEBAPP_HOST, WEBAPP_PORT, WHERE_SEND
 
 # from testing.sqllighter3 import SQLighter
@@ -308,7 +308,7 @@ async def send_verif(cb):
                 text = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
                 text = f"from {cur_vacancy.name} @{cur_vacancy.username or cb.from_user.id} \n\n" + text
                 vacancy_link_button = None
-                if cur_vacancy.info.get('vacancy_link', None):
+                if cur_vacancy.info.get('vacancy_link', None) and USE_LINK_BUTTON:
                     vacancy_link_button = types.InlineKeyboardButton('🌐 Vacancy Link 🌐',
                                                                      url=cur_vacancy.info['vacancy_link'])
                     vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
@@ -423,14 +423,15 @@ async def vacancy_name(cb):
         cur_vacancy = vacancy_per_user.get(chat_id, None)
 
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
-            cur_vacancy.info['vacancy'] = cb.data
-        try:
-            await cur_vacancy.update_vacancy_text(chat_id, bot)
-            await menu_return(cb.message)
-            await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
-                                                reply_markup=cur_vacancy.get_mp)
-        except Exception as err:
-            print(err)
+            cur_vacancy.info['vacancy'] = cb.data.replace('_', " ")
+            try:
+                await cur_vacancy.update_vacancy_text(chat_id, bot)
+                while not cur_vacancy.menu.cb_tag == 'root':
+                    await menu_return(cb.message)
+                await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
+                                                    reply_markup=cur_vacancy.get_mp)
+            except Exception as err:
+                print(err)
         else:
             await new_vacancy(cb.message)
         try:
@@ -457,10 +458,10 @@ async def callback4_all(cb):
                     or not cur_vacancy.info.get('vacancy', None)
                     or not cur_vacancy.location(is_tag=True)
                     or (not cur_vacancy.contacts() and not cur_vacancy.info.get('vacancy_link', None))) and cb.data in (
-                        "pre_reset_vacancy", "pre_send_vacancy"):
+                "pre_send_vacancy",):
                     try:
                         await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
-                                                        text='ПОЛЯ \n\n"🏢 Компания",\n"🖥 Вакансия",\n"🗺 Локация",\n"📨 Контакты"\n\nОБЯЗАТЕЛЬНЫ')
+                                                        text=f'Добавьте следующую информацию: \n\n{cur_vacancy.get_unfilled()}')
                         return
                     except Exception as err:
                         print(err)

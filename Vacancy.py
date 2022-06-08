@@ -1,11 +1,13 @@
+import re
 from collections import OrderedDict
 
 from aiogram import types, Bot
 from aiogram.types import InlineKeyboardButton
 
 from configs import markup_text
-from configs.markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN
+from configs.markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN, USE_LINK_BUTTON
 from cleantext import clean as clean_text
+
 vacancy_per_user = {}
 
 
@@ -106,6 +108,8 @@ class Vacancy:
                 send_res = result
                 if send_res and send_res[-1] == '\n':
                     send_res = send_res[:-1]
+                if not USE_LINK_BUTTON:
+                    send_res += self.vacancy_link(is_preview=False)
                 return send_res + tags
 
             else:
@@ -384,7 +388,9 @@ class Vacancy:
         company = self.info.get('company', '')
 
         if is_tag and company:
-            return '#' + f"{company}".replace('-', '').replace('\'', '').title().replace(' ', '').replace('.', '')
+            return '#' + f"{company}".replace('-', '').replace('\'', '').title().replace(' ', '').replace('.',
+                                                                                                          '').replace(
+                '\t', '')
 
         if not is_tag and company:
             company = company.capitalize() if company and company[0].islower() else company
@@ -441,20 +447,24 @@ class Vacancy:
             return ''
 
     def payment(self):
-        result = self.info.get('payment', '')
-        result = result.replace('.', "")
-        result = result.replace('рублей', "₽")
-        result = result.replace('руб', "₽")
-        result = result.replace('р', "₽")
-        result = result.replace('rub', "₽")
-        result = result.replace('дол', "$")
-        result = result.replace('usd', "$")
-        result = result.replace('долларов', "$")
-        result = result.replace('евро', "€")
-        result = result.replace('euro', "€")
-        result = result.replace('eu', "€")
+        # "пробел + р + пробел"
+        # "пробел + р + конец строки или точка"
+        # "пробел + руб + конец строки или точка"
 
-        return f"\n💰 {result}" if result else ""
+        result = self.info.get('payment', '')
+        result += " " if result else ''
+        to_change = {"₽": ('рублей', 'руб', 'р', 'rub', "рубб"), "$": ('дол', 'usd', 'долларов', 'доларов'), "€": ("евро", "euro", "eu")}
+        for replace_with, replace_those in to_change.items():
+            if type(replace_those) is tuple:
+                for replace_it in replace_those:
+                    regex = re.compile(rf'[\W]?{replace_it}[\W]+', re.I)
+                    result = re.sub(regex, replace_with, result.lower())
+                    print(re.sub(regex, replace_with, result))
+
+            elif type(replace_those) is str:
+                result = result.replace(replace_those, replace_with)
+
+        return f"\n💰 {result.capitalize()}" if result else ""
 
     def location(self, is_tag=False):
         remote = self.info.get('Remote', '')
@@ -567,6 +577,25 @@ class Vacancy:
             item = types.InlineKeyboardButton(text, callback_data=cb)
             mp.add(item)
         return mp
+
+    def get_unfilled(self):
+        #     or () and cb.data in (
+        #         "pre_send_vacancy",):
+        unfilled_field = []
+
+        is_company_name = bool(not self.company())
+        if is_company_name: unfilled_field.append('🏢 Компания')
+        is_vacancy_title = bool(not self.info.get('vacancy', None))
+        if is_vacancy_title: unfilled_field.append('🖥 Вакансия')
+        is_location = bool(not self.location(is_tag=True))
+        if is_location: unfilled_field.append('🗺 Локация')
+        is_contacts = bool(not self.contacts() and not self.info.get('vacancy_link', None))
+        if is_contacts: unfilled_field.append('📨 Контакты || 🌐 Vacancy link')
+        result = '\n'.join(unfilled_field)
+        print(result)
+        return result
+        # is_link = bool(not self.info.get('vacancy_link', None))
+        # if is_link: unfilled_field.append('🌐 Vacancy link')
 
     def bottom_menu_send_reset(self) -> tuple[InlineKeyboardButton, InlineKeyboardButton]:
         # self.bottom_menu = self.render_menu(BOTTOM_menu)
