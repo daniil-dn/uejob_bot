@@ -8,7 +8,7 @@ USER_MENU = OrderedDict(
                                                              "ai_developer": "AI DEVELOPER",
                                                              "gameplay_developer": "GAMEPLAY DEVELOPER"}),
                                  "artist": ('ARTIST', {"3d_artist": "3D ARTIST", "technical_artist": "TECHNICAL ARTIST",
-                                                       "environmental_artist": "ENVIRONMENTAL ARTIST",
+                                                       "environment_artist": "ENVIRONMENT ARTIST",
                                                        "vfx_artist": "VFX ARTIST",
                                                        "lightning_artist": "LIGHTING ARTIST"}),
                                  "designer": (
@@ -41,14 +41,14 @@ USER_MENU = OrderedDict(
      })
 # text, auto_input, inline_input
 default_vacancy_name = "generalist, c++_developer, multiplayer_developer, ai_developer,gameplay_developer," \
-                                 " 3d_artist,technical_artist, environmental_artist, vfx_artist, lighting_artistgame_designer," \
-                                 " motion_designer, level_designer, ui/ux_designer"
+                       "3d_artist, technical_artist, environment_artist, vfx_artist, lighting_artistgame_designer," \
+                       " motion_designer, level_designer, ui/ux_designer"
 MENU_ACTIONS = {
     f"all": "text",
     'nothing_exceptions': "pre_reset_vacancy, root, pre_send_vacancy, Intern, location, Remote, experience, junior, "
                           "senior, middle, Full-Time, Part-Time, Contract, schedule, Relocate, indie, generalist, "
                           "c++_developer, multiplayer_developer, ai_developer,gameplay_developer, 3d_artist,"
-                          " technical_artist, environmental_artist, vfx_artist, lighting_artist"
+                          " technical_artist, environment_artist, vfx_artist, lighting_artist"
                           "game_designer, motion_designer, level_designer, ui/ux_designer",
 
     "not_clear": "payment, root, pre_send_vacancy, schedule, pre_reset_vacancy, send_verif, reset_verif"
