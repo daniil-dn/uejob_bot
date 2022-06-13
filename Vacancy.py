@@ -5,7 +5,8 @@ from aiogram import types, Bot
 from aiogram.types import InlineKeyboardButton
 
 from configs import markup_text
-from configs.markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN, USE_LINK_BUTTON
+from configs.markup_text import USER_MENU, MENU_ACTIONS, MP_WIDTH, CODE_PATTERN, ART_PATTERN, CHAR_CLEAN, \
+    USE_LINK_BUTTON
 from cleantext import clean as clean_text
 
 vacancy_per_user = {}
@@ -72,7 +73,7 @@ class Vacancy:
 
         return mp
 
-    async def update_vacancy_text(self, chat_id, bot: Bot, is_send=False):
+    async def update_vacancy_text(self, chat_id, bot: Bot, is_send=False, to_db=False):
         cur_menu = f"<i>{self.menu.text}</i>" if self.menu.cb_tag != 'root' else ''
 
         """
@@ -86,7 +87,7 @@ class Vacancy:
         self.update_remote_checked_items()
         self.update_schedule_checked_items()
         self.update_experience_checked_items()
-        if self.info or True:
+        if self.info:
             tags = self.tags()
             result = self.vacancy_title()
 
@@ -103,17 +104,20 @@ class Vacancy:
             result += self.useful_info()
             result += self.contacts()
 
+            if to_db:
+                return result, tags, self.vacancy_link(to_db=True)
+
             # отправка в канал
             if is_send:
                 send_res = result
                 if send_res and send_res[-1] == '\n':
                     send_res = send_res[:-1]
                 if not USE_LINK_BUTTON:
-                    send_res += self.vacancy_link(is_preview=False)
+                    send_res += self.vacancy_link()
                 return send_res + tags
 
             else:
-                result += self.vacancy_link(is_preview=False)
+                result += self.vacancy_link()
             try:
                 # Если мы в руте и нет данных
                 if not self.info and self.menu.cb_tag == 'root':
@@ -433,7 +437,7 @@ class Vacancy:
 
         return result
 
-    def experience(self, is_tag=False):
+    def experience(self):
         years = self.info.get('years', '')
         return f"({years}+)" if years else ""
 
@@ -453,7 +457,8 @@ class Vacancy:
 
         result = self.info.get('payment', '')
         result += " " if result else ''
-        to_change = {"₽": ('рублей', 'руб', 'р', 'rub', "рубб"), "$": ('дол', 'usd', 'долларов', 'доларов'), "€": ("евро", "euro", "eu")}
+        to_change = {"₽": ('рублей', 'руб', 'р', 'rub', "рубб"), "$": ('дол', 'usd', 'долларов', 'доларов'),
+                     "€": ("евро", "euro", "eu")}
         for replace_with, replace_those in to_change.items():
             if type(replace_those) is tuple:
                 for replace_it in replace_those:
@@ -516,10 +521,10 @@ class Vacancy:
         contacts = self.info.get('contacts', '')
         return f'\n\n<b>📨 Контакты</b>\n{contacts}' if contacts else ''
 
-    def vacancy_link(self, is_preview=True):
+    def vacancy_link(self, to_db=False):
         link = self.info.get('vacancy_link', None)
-        if link and is_preview:
-            return f"\n\n🌐 Vacancy link"
+        if link and to_db:
+            return f"{link}"
         elif link:
 
             vacancy_link_button = types.InlineKeyboardButton('🌐 Vacancy Link 🌐',
@@ -527,7 +532,7 @@ class Vacancy:
 
             vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
             self.info['vacancy_link_button'] = vacancy_link_button
-            return f"\n\n<a href='{self.info['vacancy_link']}'>🌐 Vacancy link</a>"
+            return f"\n\n<a href='{link}'>🌐 Vacancy link</a>"
         else:
             return ''
 
@@ -578,8 +583,6 @@ class Vacancy:
         return mp
 
     def get_unfilled(self):
-        #     or () and cb.data in (
-        #         "pre_send_vacancy",):
         unfilled_field = []
 
         is_company_name = bool(not self.company())
@@ -593,8 +596,6 @@ class Vacancy:
         result = '\n'.join(unfilled_field)
         print(result)
         return result
-        # is_link = bool(not self.info.get('vacancy_link', None))
-        # if is_link: unfilled_field.append('🌐 Vacancy link')
 
     def bottom_menu_send_reset(self) -> tuple[InlineKeyboardButton, InlineKeyboardButton]:
         # self.bottom_menu = self.render_menu(BOTTOM_menu)

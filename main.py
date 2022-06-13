@@ -1,25 +1,35 @@
 import logging
+import asyncpgx
+import datetime
 
 from aiogram import Bot
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
-from aiogram.utils.exceptions import MessageNotModified
+from aiogram.utils.exceptions import MessageNotModified, BadRequest
 from contextlib import suppress
 from aiogram.utils.executor import start_webhook
 
 from configs.mytoken import TOKEN as API_TOKEN
 from Vacancy import vacancy_per_user, Vacancy, types
 from configs.markup_text import help_text, AFTER_SEND_MP, AFTER_SEND_ALERT, default_vacancy_name, USE_LINK_BUTTON
-from configs.config import WEBHOOK_HOST, WEBAPP_HOST, WEBAPP_PORT, WHERE_SEND
+from configs.config import WEBHOOK_HOST, WEBAPP_HOST, WEBAPP_PORT, WHERE_SEND, DbConfig
+from middlewares.db import DbMiddleware
 
 # from testing.sqllighter3 import SQLighter
 WEBHOOK_PATH = '/'
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
+
+async def create_pool(user, password, database, host, echo):
+    pool = await asyncpgx.create_pool(database=database, user=user, password=password, host=host)
+    return pool
+
+
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
+
 dp.middleware.setup(LoggingMiddleware())
 
 
@@ -296,7 +306,7 @@ async def schedule(cb):
 
 @dp.callback_query_handler(
     lambda call: call.data in ("send_verif"))
-async def send_verif(cb):
+async def send_verif(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -313,11 +323,12 @@ async def send_verif(cb):
                                                                      url=cur_vacancy.info['vacancy_link'])
                     vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
                 try:
-                    draft_mg = await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
-                                                      disable_web_page_preview=True, reply_markup=vacancy_link_button)
-                except Exception:
-                    draft_mg = await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
-                                                      disable_web_page_preview=True)
+                    await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
+                                           disable_web_page_preview=True, reply_markup=vacancy_link_button)
+
+                except BadRequest as err:
+                    await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
+                                           disable_web_page_preview=True)
 
                 await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
                                                 text=AFTER_SEND_ALERT)
@@ -325,7 +336,12 @@ async def send_verif(cb):
                 mp = cur_vacancy.mp_from_tuple(AFTER_SEND_MP)
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
                                                     reply_markup=mp)
-
+                userid = cb.from_user.id
+                username = cb.from_user.username
+                await repo.add_user(userid, username)
+                db_data = await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True, to_db=True)
+                await repo.write_vacancy(userid=cb.from_user.id, main_part=db_data[0], tags=db_data[1],
+                                         link=db_data[2])
             except Exception as err:
                 print(err)
         else:
@@ -458,7 +474,7 @@ async def callback4_all(cb):
                     or not cur_vacancy.info.get('vacancy', None)
                     or not cur_vacancy.location(is_tag=True)
                     or (not cur_vacancy.contacts() and not cur_vacancy.info.get('vacancy_link', None))) and cb.data in (
-                "pre_send_vacancy",):
+                        "pre_send_vacancy",):
                     try:
                         await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
                                                         text=f'Добавьте следующую информацию: \n\n{cur_vacancy.get_unfilled()}')
@@ -486,6 +502,14 @@ async def callback4_all(cb):
 
 async def on_startup(dp):
     await bot.set_webhook(WEBHOOK_URL)
+    pool = await create_pool(
+        user=DbConfig.user,
+        password=DbConfig.password,
+        database=DbConfig.database,
+        host=DbConfig.host,
+        echo=False,
+    )
+    dp.middleware.setup(DbMiddleware(pool))
     # insert code here to run it after start
 
 
