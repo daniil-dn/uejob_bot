@@ -323,12 +323,14 @@ async def send_verif(cb, repo, db):
                                                                      url=cur_vacancy.info['vacancy_link'])
                     vacancy_link_button = types.InlineKeyboardMarkup().add(vacancy_link_button)
                 try:
-                    await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
-                                           disable_web_page_preview=True, reply_markup=vacancy_link_button)
+                    pass
+                    # await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
+                    #                        disable_web_page_preview=True, reply_markup=vacancy_link_button)
 
                 except BadRequest as err:
-                    await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
-                                           disable_web_page_preview=True)
+                    pass
+                    # await bot.send_message(chat_id=WHERE_SEND, text=text, parse_mode="html",
+                    #                        disable_web_page_preview=True)
 
                 await bot.answer_callback_query(show_alert=True, callback_query_id=cb.id,
                                                 text=AFTER_SEND_ALERT)
