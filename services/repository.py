@@ -30,8 +30,11 @@ class Repo:
 
     async def write_vacancy(self, main_part, tags, link, userid) -> bool:
         try:
-            request = f"INSERT INTO user_vacancies(main_part, tags, link, date_time, user_id) VALUES " \
-                      f"('{main_part}', '{tags}', '{link}', CURRENT_TIMESTAMP, {userid}) ON CONFLICT DO NOTHING;"
+            main_part = main_part.replace("'", "''")
+            tags = tags.replace("'", "''")
+            link = tags.replace("'", "''")
+            request = fr"INSERT INTO user_vacancies(main_part, tags, link, date_time, user_id) VALUES " \
+                      fr"('{main_part}', '{tags}', '{link}', CURRENT_TIMESTAMP, {userid}) ON CONFLICT DO NOTHING;"
             await self.conn.execute(
                 request
             )
