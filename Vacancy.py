@@ -18,7 +18,6 @@ class Vacancy:
         """
         Создает new объект вакансии.
         Инициализирует Шаги из файлы markup_text.py
-
         :param main_mg_id:
         :param chat_id:
         """
@@ -77,7 +76,6 @@ class Vacancy:
         cur_menu = f"<i>{self.menu.text}</i>" if self.menu.cb_tag != 'root' else ''
 
         """
-
         :param chat_id:
         :param bot:
         :return:
@@ -87,99 +85,99 @@ class Vacancy:
         self.update_remote_checked_items()
         self.update_schedule_checked_items()
         self.update_experience_checked_items()
-        if self.info:
-            tags = self.tags()
-            result = self.vacancy_title()
 
-            result += self.project()
-            result += self.jun_mid_sen()
-            result += self.payment()
-            result += self.schedule()
-            result += self.location()
-            result += self.description()
-            result += self.duty()
-            result += self.skills()
-            result += self.add_skills()
-            result += self.conditions()
-            result += self.useful_info()
-            result += self.contacts()
+        tags = self.tags()
+        result = self.vacancy_title()
 
-            if to_db:
-                return result, tags, self.vacancy_link(to_db=True)
+        result += self.project()
+        result += self.jun_mid_sen()
+        result += self.payment()
+        result += self.schedule()
+        result += self.location()
+        result += self.description()
+        result += self.duty()
+        result += self.skills()
+        result += self.add_skills()
+        result += self.conditions()
+        result += self.useful_info()
+        result += self.contacts()
 
-            # отправка в канал
-            if is_send:
-                send_res = result
-                if send_res and send_res[-1] == '\n':
-                    send_res = send_res[:-1]
-                if not USE_LINK_BUTTON:
-                    send_res += self.vacancy_link()
-                return send_res + tags
+        if to_db:
+            return result, tags, self.vacancy_link(to_db=True)
 
+        # отправка в канал
+        if is_send:
+            send_res = result
+            if send_res and send_res[-1] == '\n':
+                send_res = send_res[:-1]
+            if not USE_LINK_BUTTON:
+                send_res += self.vacancy_link()
+            return send_res + tags
+
+        else:
+            result += self.vacancy_link()
+        try:
+            # Если мы в руте и нет данных
+            if not self.info and self.menu.cb_tag == 'root':
+                result += self.help('start').format(name=self.name)
+                await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                            disable_web_page_preview=True)
+
+            elif self.menu.cb_tag == 'pre_send_vacancy' or is_send is True or self.menu.cb_tag == 'pre_reset_vacancy':
+                await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                            disable_web_page_preview=True)
+            elif self.menu.parent != 'root':
+                text = ''
+                match self.menu.cb_tag.lower():
+                    case "company":
+                        company = self.company()
+                        text += '<b>' + company.strip('()') + '</b>' if company else ''
+                    case "vacancy":
+                        text += self.vacancy_title()
+                    case "description":
+                        text += self.description()
+                    case "project":
+                        text += self.project()
+                    case "experience":
+                        text += self.jun_mid_sen()
+                    case "schedule":
+                        text += self.schedule()
+                    case "payment":
+                        text += self.payment()
+                    case "location" | 'office':
+                        text += self.location()
+                    case "duty":
+                        text += self.duty()
+                    case "skills":
+                        text += self.skills()
+                    case "add_skills":
+                        text += self.add_skills()
+                    case "conditions":
+                        text += self.conditions()
+                    case "useful_info":
+                        text += self.useful_info()
+                    case "contacts" | 'vacancy_link':
+                        text += self.contacts()
+
+                help = self.help()
+                help = f'\n{help}\n' if help else '\n'
+
+                text = text.removeprefix('\n')
+                text = text.removeprefix('\n')
+                text = text.removesuffix('\n')
+                text = text.removesuffix('\n')
+                text = f'\n{text}' if text else ''
+
+                result = cur_menu + help + text
+
+                await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                            disable_web_page_preview=True)
             else:
-                result += self.vacancy_link()
-            try:
-                # Если мы в руте и нет данных
-                if not self.info and self.menu.cb_tag == 'root':
-                    result += self.help('start').format(name=self.name)
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
-                                                disable_web_page_preview=True)
-
-                elif self.menu.cb_tag == 'pre_send_vacancy' or is_send is True or self.menu.cb_tag == 'pre_reset_vacancy':
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
-                                                disable_web_page_preview=True)
-                elif self.menu.parent != 'root':
-                    text = ''
-                    match self.menu.cb_tag.lower():
-                        case "company":
-                            company = self.company()
-                            text += '<b>' + company.strip('()') + '</b>' if company else ''
-                        case "vacancy":
-                            text += self.vacancy_title()
-                        case "description":
-                            text += self.description()
-                        case "project":
-                            text += self.project()
-                        case "experience":
-                            text += self.jun_mid_sen()
-                        case "schedule":
-                            text += self.schedule()
-                        case "payment":
-                            text += self.payment()
-                        case "location" | 'office':
-                            text += self.location()
-                        case "duty":
-                            text += self.duty()
-                        case "skills":
-                            text += self.skills()
-                        case "add_skills":
-                            text += self.add_skills()
-                        case "conditions":
-                            text += self.conditions()
-                        case "useful_info":
-                            text += self.useful_info()
-                        case "contacts" | 'vacancy_link':
-                            text += self.contacts()
-
-                    help = self.help()
-                    help = f'\n{help}\n' if help else '\n'
-
-                    text = text.removeprefix('\n')
-                    text = text.removeprefix('\n')
-                    text = text.removesuffix('\n')
-                    text = text.removesuffix('\n')
-                    text = f'\n{text}' if text else ''
-
-                    result = cur_menu + help + text
-
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
-                                                disable_web_page_preview=True)
-                else:
-                    result += self.help() + cur_menu
-                    await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
-                                                disable_web_page_preview=True)
-            except Exception as err:
-                print(err)
+                result += self.help() + cur_menu
+                await bot.edit_message_text(result, chat_id, self.mg_id, parse_mode="html",
+                                            disable_web_page_preview=True)
+        except Exception as err:
+            print(err)
 
     async def update_code_art(self, text: str):
         if not self.menu.cb_tag == 'vacancy':
@@ -313,7 +311,6 @@ class Vacancy:
     def tags(self):
         """
         #UnrealEngine #GameDev #FullTime #Art #Middle #PC #Remote #Office #ProgramAce
-
         :return:
         """
         tags = ''
@@ -565,7 +562,6 @@ class Vacancy:
             из
             кортежа
             данных
-
             : type
             data_tuples: tuple[tuple,]
             :param
