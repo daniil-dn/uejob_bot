@@ -83,7 +83,7 @@ async def clear_markup(current_message_id, chat_id, count_to_delete=5):
 
 # Команда для полной перезагрузки и начала с меню
 @dp.message_handler(commands=['start'])
-async def start(message: types.Message):
+async def start(message: types.Message, repo, db):
     with suppress(MessageNotModified):
         """
         При старте бота
@@ -94,31 +94,42 @@ async def start(message: types.Message):
         """
         chat_id, mg_id = chat_message_id(message)
 
-        await new_vacancy(message)
+        await new_vacancy(message, repo, db)
 
 
 @dp.message_handler(commands=['new'])
 @dp.callback_query_handler(lambda call: call.data.startswith('/new'))
-async def new_vacancy(message: types.Message):
+async def new_vacancy(message: types.Message, repo, db):
     """
     Создание новой вакансии
         Создает новое голавное сообщение и присваивает его к объекту вакансии
         Возврат в главное меню
     :param message:
+    :param repo:
+    :param db:
     :return:
     """
     if type(message) is types.CallbackQuery:
-        message = message.message
+        cb_message = message.message
+        user_id = cb_message.chat.id
+    else:
+        cb_message = message
+        user_id = cb_message.chat.id
+    if await repo.check_ban(user_id):
+        await message.bot.send_message(cb_message.chat.id, 'You are banned! Contact the admins of @uejobs')
+        return
+
     with suppress(MessageNotModified):
-        chat_id, mg_id = chat_message_id(message)
+        chat_id, mg_id = chat_message_id(cb_message)
         # на всякий случай очищает клавиатуры последних 2 сообщений
         await clear_markup(mg_id, chat_id)
 
         # Работаем с этим сообщением
         mg = await bot.send_message(chat_id, disable_web_page_preview=True,
-                                    text=help_text['start'].format(name=message.chat.first_name))
+                                    text=help_text['start'].format(name=cb_message.chat.first_name))
 
-        cur_vacancy = Vacancy(mg.message_id, chat_id, username=message.chat.username, name=message.chat.first_name)
+        cur_vacancy = Vacancy(mg.message_id, chat_id, username=cb_message.chat.username,
+                              name=cb_message.chat.first_name)
 
         vacancy_per_user[chat_id] = cur_vacancy
         await cur_vacancy.update_vacancy_text(chat_id, bot)
@@ -130,7 +141,7 @@ async def new_vacancy(message: types.Message):
 
 # Работа с данными без клавиатуры - описание, и др., где требуется ввод с клавиатуры
 @dp.message_handler()
-async def text_handler(message: types.Message):
+async def text_handler(message: types.Message,repo, db):
     with suppress(MessageNotModified):
         chat_id, cb_mg_id = chat_message_id(message)
         cur_vacancy = vacancy_per_user.get(chat_id, None)
@@ -150,13 +161,13 @@ async def text_handler(message: types.Message):
 
 # Меню заполнения вакансии
 @dp.callback_query_handler(lambda call: call.data == 'back_menu')
-async def menu_return(cb):
+async def menu_return(cb, repo, db):
     with suppress(MessageNotModified):
         try:
             chat_id, cb_mg_id = chat_message_id(cb)
             cur_vacancy = vacancy_per_user.get(chat_id, None)
             if not cur_vacancy:
-                cur_vacancy = await new_vacancy(cb.message)
+                cur_vacancy = await new_vacancy(cb.message, repo, db)
 
             # Работаем только с актуальным сообщением
             if cb_mg_id == cur_vacancy.mg_id or type(cb) is types.Message:
@@ -217,7 +228,7 @@ async def clear_field(cb):
 
 
 @dp.callback_query_handler(lambda call: call.data in ('Intern', 'Junior', 'Middle', "Senior"))
-async def jun_mid_sen(cb):
+async def jun_mid_sen(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -239,7 +250,7 @@ async def jun_mid_sen(cb):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
 
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
@@ -249,7 +260,7 @@ async def jun_mid_sen(cb):
 
 @dp.callback_query_handler(
     lambda call: call.data in ('Remote', 'PC', "Console", "VR/AR", "Mobile", 'Relocate'))
-async def platform_cb(cb):
+async def platform_cb(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -268,7 +279,7 @@ async def platform_cb(cb):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -277,7 +288,7 @@ async def platform_cb(cb):
 
 @dp.callback_query_handler(
     lambda call: call.data in ('Full-Time', "Part-Time", "Contract"))
-async def schedule(cb):
+async def schedule(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -297,7 +308,7 @@ async def schedule(cb):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -347,7 +358,7 @@ async def send_verif(cb, repo, db):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -356,7 +367,7 @@ async def send_verif(cb, repo, db):
 
 @dp.callback_query_handler(
     lambda call: call.data in ("reset_verif"))
-async def reset_verif(cb):
+async def reset_verif(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -366,12 +377,12 @@ async def reset_verif(cb):
         if cur_vacancy and cb_mg_id == cur_vacancy.mg_id:
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot, is_send=True)
-                await new_vacancy(cb.message)
+                await new_vacancy(cb.message, repo, db)
 
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -380,7 +391,7 @@ async def reset_verif(cb):
 
 @dp.callback_query_handler(
     lambda call: call.data in ("Negotiable"))
-async def pay(cb):
+async def pay(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -397,7 +408,7 @@ async def pay(cb):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -406,7 +417,7 @@ async def pay(cb):
 
 @dp.callback_query_handler(
     lambda call: call.data in ("indie"))
-async def indie(cb):
+async def indie(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -423,7 +434,7 @@ async def indie(cb):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -433,7 +444,7 @@ async def indie(cb):
 @dp.callback_query_handler(
     lambda call: (
             call.data == 'generalist' or (call.data.find('_') >= 0 and default_vacancy_name.find(call.data) >= 0)))
-async def vacancy_name(cb):
+async def vacancy_name(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -451,7 +462,7 @@ async def vacancy_name(cb):
             except Exception as err:
                 print(err)
         else:
-            await new_vacancy(cb.message)
+            await new_vacancy(cb.message, repo, db)
         try:
             await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
         except Exception as err:
@@ -461,7 +472,7 @@ async def vacancy_name(cb):
 # Меню заполнения вакансии
 # проверка cb на тег меню
 @dp.callback_query_handler(lambda call: True)
-async def callback4_all(cb):
+async def callback4_all(cb, repo, db):
     with suppress(MessageNotModified):
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
@@ -493,7 +504,7 @@ async def callback4_all(cb):
                     print(err)
         else:  # одно из предыдущий Сообщений
             try:
-                await new_vacancy(cb.message)
+                await new_vacancy(cb.message, repo, db)
             except Exception as err:
                 print(err)
         try:
