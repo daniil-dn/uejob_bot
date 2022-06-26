@@ -318,9 +318,14 @@ async def schedule(cb, repo, db):
 @dp.callback_query_handler(
     lambda call: call.data in ("send_verif"))
 async def send_verif(cb, repo, db):
+
     with suppress(MessageNotModified):
+
         # для удобной работы с данными сообщения
         chat_id, cb_mg_id = chat_message_id(cb)
+        if await repo.check_ban(cb.message.chat.id):
+            await cb.bot.send_message(cb.message.chat.id, 'You are banned! Contact the admins of @uejobs')
+            return
 
         cur_vacancy = vacancy_per_user.get(chat_id, None)
 
