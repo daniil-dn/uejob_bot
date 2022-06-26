@@ -28,6 +28,14 @@ class Repo:
             )
         ]
 
+    async def check_ban(self, user_id) -> bool:
+        return bool([
+            row[0]
+            for row in await self.conn.fetch(
+                f"select user_id from ban_list where user_id = {user_id}",
+            )
+        ])
+
     async def write_vacancy(self, main_part, tags, link, userid) -> bool:
         try:
             main_part = main_part.replace("'", "''")
