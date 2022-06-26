@@ -32,7 +32,7 @@ class Repo:
         try:
             main_part = main_part.replace("'", "''")
             tags = tags.replace("'", "''")
-            link = tags.replace("'", "''")
+            link = link.replace("'", "''")
             request = fr"INSERT INTO user_vacancies(main_part, tags, link, date_time, user_id) VALUES " \
                       fr"('{main_part}', '{tags}', '{link}', CURRENT_TIMESTAMP, {userid}) ON CONFLICT DO NOTHING;"
             await self.conn.execute(
