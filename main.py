@@ -141,7 +141,7 @@ async def new_vacancy(message: types.Message, repo, db):
 
 # Работа с данными без клавиатуры - описание, и др., где требуется ввод с клавиатуры
 @dp.message_handler()
-async def text_handler(message: types.Message,repo, db):
+async def text_handler(message: types.Message, repo, db):
     with suppress(MessageNotModified):
         chat_id, cb_mg_id = chat_message_id(message)
         cur_vacancy = vacancy_per_user.get(chat_id, None)
@@ -154,7 +154,7 @@ async def text_handler(message: types.Message,repo, db):
 
                 await cur_vacancy.update_code_art(message.text)
                 await cur_vacancy.update_vacancy_text(message.chat.id, bot)
-                await menu_return(message)
+                await menu_return(message, repo, db)
             # удаляет сообщение пользователя, когда не надо вводить ничего!
             await delete_prev_messages(message.message_id, message.chat.id, 1)
 
@@ -191,7 +191,7 @@ async def menu_return(cb, repo, db):
 
 
 @dp.callback_query_handler(lambda call: call.data.startswith('clear_'))
-async def clear_field(cb):
+async def clear_field(cb, repo, db):
     chat_id, cb_mg_id = chat_message_id(cb)
     cur_vacancy = vacancy_per_user.get(chat_id, None)
 
@@ -224,7 +224,7 @@ async def clear_field(cb):
                 print(err)
 
         await cur_vacancy.update_vacancy_text(cb.message.chat.id, bot)
-        await menu_return(cb.message)
+        await menu_return(cb.message, repo, db)
 
 
 @dp.callback_query_handler(lambda call: call.data in ('Intern', 'Junior', 'Middle', "Senior"))
@@ -244,7 +244,7 @@ async def jun_mid_sen(cb, repo, db):
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
-                # await menu_return(cb.message)\
+                # await menu_return(cb.message, repo, db)\
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
                                                     reply_markup=cur_vacancy.get_mp)
             except Exception as err:
@@ -302,7 +302,7 @@ async def schedule(cb, repo, db):
                 cur_vacancy.info['schedule'] = None
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
-                await menu_return(cb.message)
+                await menu_return(cb.message, repo, db)
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
                                                     reply_markup=cur_vacancy.get_mp)
             except Exception as err:
@@ -402,7 +402,7 @@ async def pay(cb, repo, db):
             cur_vacancy.info['payment'] = "По договоренности"
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
-                await menu_return(cb.message)
+                await menu_return(cb.message, repo, db)
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
                                                     reply_markup=cur_vacancy.get_mp)
             except Exception as err:
@@ -428,7 +428,7 @@ async def indie(cb, repo, db):
             cur_vacancy.info['company'] = "Indie"
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
-                await menu_return(cb.message)
+                await menu_return(cb.message, repo, db)
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
                                                     reply_markup=cur_vacancy.get_mp)
             except Exception as err:
@@ -456,7 +456,7 @@ async def vacancy_name(cb, repo, db):
             try:
                 await cur_vacancy.update_vacancy_text(chat_id, bot)
                 while not cur_vacancy.menu.cb_tag == 'root':
-                    await menu_return(cb.message)
+                    await menu_return(cb.message, repo, db)
                 await bot.edit_message_reply_markup(chat_id, message_id=cur_vacancy.mg_id,
                                                     reply_markup=cur_vacancy.get_mp)
             except Exception as err:
