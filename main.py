@@ -93,8 +93,12 @@ async def start(message: types.Message, repo, db):
         :return: None
         """
         chat_id, mg_id = chat_message_id(message)
-
-        await new_vacancy(message, repo, db)
+        mp = types.ReplyKeyboardMarkup(row_width=3)
+        mp.add(types.KeyboardButton('1'))
+        mp.add(types.KeyboardButton('2'))
+        mp.add(types.KeyboardButton('3'))
+        await bot.send_message(message.chat.id, 'reply markup', reply_markup=mp)
+        # await new_vacancy(message, repo, db)
 
 
 @dp.message_handler(commands=['new'])
@@ -116,7 +120,8 @@ async def new_vacancy(message: types.Message, repo, db):
         cb_message = message
         user_id = cb_message.chat.id
     if await repo.check_ban(user_id):
-        await message.bot.send_message(cb_message.chat.id, 'You are banned! Contact the admins of @uejobs')
+        markup_remove = types.ReplyKeyboardRemove()
+        await message.bot.send_message(cb_message.chat.id, 'You are banned! Contact the admins of @uejobs', reply_markup=markup_remove)
         return
 
     with suppress(MessageNotModified):
@@ -125,8 +130,9 @@ async def new_vacancy(message: types.Message, repo, db):
         await clear_markup(mg_id, chat_id)
 
         # Работаем с этим сообщением
+        rm_reply_mp = types.ReplyKeyboardRemove()
         mg = await bot.send_message(chat_id, disable_web_page_preview=True,
-                                    text=help_text['start'].format(name=cb_message.chat.first_name))
+                                    text=help_text['start'].format(name=cb_message.chat.first_name), reply_markup=rm_reply_mp)
 
         cur_vacancy = Vacancy(mg.message_id, chat_id, username=cb_message.chat.username,
                               name=cb_message.chat.first_name)
@@ -135,6 +141,7 @@ async def new_vacancy(message: types.Message, repo, db):
         await cur_vacancy.update_vacancy_text(chat_id, bot)
 
         mp = cur_vacancy.get_mp
+
         await bot.edit_message_reply_markup(chat_id, cur_vacancy.mg_id, reply_markup=mp)
         return cur_vacancy
 
@@ -318,7 +325,6 @@ async def schedule(cb, repo, db):
 @dp.callback_query_handler(
     lambda call: call.data in ("send_verif"))
 async def send_verif(cb, repo, db):
-
     with suppress(MessageNotModified):
 
         # для удобной работы с данными сообщения
