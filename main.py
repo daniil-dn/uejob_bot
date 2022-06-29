@@ -131,8 +131,10 @@ async def new_vacancy(message: types.Message, repo, db):
 
         # Работаем с этим сообщением
         rm_reply_mp = types.ReplyKeyboardRemove()
+        rm_mg = await bot.send_message(chat_id, disable_notification=True, text='Clear', reply_markup=rm_reply_mp)
+        await rm_mg.delete()
         mg = await bot.send_message(chat_id, disable_web_page_preview=True,
-                                    text=help_text['start'].format(name=cb_message.chat.first_name), reply_markup=rm_reply_mp)
+                                    text=help_text['start'].format(name=cb_message.chat.first_name))
 
         cur_vacancy = Vacancy(mg.message_id, chat_id, username=cb_message.chat.username,
                               name=cb_message.chat.first_name)
