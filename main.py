@@ -509,6 +509,7 @@ async def callback4_all(cb, repo, db):
                         print(err)
 
                 cur_vacancy.menu = cur_vacancy.menu.children[cb.data]
+                await bot.answer_callback_query(show_alert=False, callback_query_id=cb.id, text="Success!")
                 await cur_vacancy.update_vacancy_text(cb.message.chat.id, bot)
                 mp = cur_vacancy.get_mp
                 try:
