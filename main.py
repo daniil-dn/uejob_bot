@@ -12,7 +12,7 @@ from aiogram.utils.executor import start_webhook
 from configs.mytoken import TOKEN as API_TOKEN
 from Vacancy import vacancy_per_user, Vacancy, types
 from configs.markup_text import help_text, AFTER_SEND_MP, AFTER_SEND_ALERT, default_vacancy_name, USE_LINK_BUTTON
-from configs.config import WEBHOOK_HOST, WEBAPP_HOST, WEBAPP_PORT, WHERE_SEND, DbConfig
+from configs.config import WEBHOOK_HOST, WEBAPP_HOST, WEBAPP_PORT, DbConfig
 from middlewares.db import DbMiddleware
 
 # from testing.sqllighter3 import SQLighter
@@ -92,13 +92,8 @@ async def start(message: types.Message, repo, db):
         :param message:
         :return: None
         """
-        chat_id, mg_id = chat_message_id(message)
-        mp = types.ReplyKeyboardMarkup(row_width=3)
-        mp.add(types.KeyboardButton('1'))
-        mp.add(types.KeyboardButton('2'))
-        mp.add(types.KeyboardButton('3'))
-        await bot.send_message(message.chat.id, 'reply markup', reply_markup=mp)
-        # await new_vacancy(message, repo, db)
+        # chat_id, mg_id = chat_message_id(message)
+        await new_vacancy(message, repo, db)
 
 
 @dp.message_handler(commands=['new'])
